@@ -21,7 +21,7 @@ Add analytics to determine what posts are most relivent
 Post_df = pd.read_excel('Post_History.xlsx')
 Post_df = Post_df.sort_values('published',ascending=False)
 Display_df = Post_df.head(10).copy()
-Display_df['link'] = ['<a href="'+ str(x) +'#">Link</a>' for x in Display_df['link'].tolist()]
+Display_df['link'] = ['<a href="'+ str(x) +'">Link</a>' for x in Display_df['link'].tolist()]
 
 # In[]
 
