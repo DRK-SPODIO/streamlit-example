@@ -30,8 +30,8 @@ styles = [
                                ("padding", "12px 35px"),
                                ("border-collapse", "collapse"),
                                ("background", "#1F2441"),
-                               ("text-transform", "uppercase"),
-                               ("font-size", "18px")
+                               ("text-transform", "capitalize"),
+                               ("font-size", "16px")
                                ]),
     dict(selector="td", props=[("color", "#605ESE"),
                                ("border", "1px solid #eee"),
@@ -63,9 +63,9 @@ st.markdown(hide_table_row_index, unsafe_allow_html=True)
 Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_df['link'].tolist()]
 Display_df['summary'] = Display_df['summary'].fillna('No Summary')
 Display_df = Display_df.reset_index(drop=True)
-Disp = Display_df.style.set_table_styles(styles)
+Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 
 # In[]
-components.html(Disp.to_html(),width=1200, height=800, scrolling=True)
+components.html(Table_Styler.to_html(),width=1200, height=800, scrolling=True)
 
