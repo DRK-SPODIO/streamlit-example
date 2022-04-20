@@ -7,20 +7,20 @@ import streamlit.components.v1 as components
 
 """
 # SPODIO RSS Feed Monitor
+Tracks and aggregates Sports RSS Feeds.
 
-Tracks 72 RSS Feeds and displays details here
+TODO:
+Add analytics to determine which posts are most relivent/timely
 
-Future
-Add analytics to determine what posts are most relivent
+
+Note: Links in Summaries may not work (sometime RSS feedsmess them up)
     
+# Most recent 50 RSS posts
 """
-
-
-
 # In[]
 Post_df = pd.read_excel('Post_History.xlsx')
 Post_df = Post_df.sort_values('published',ascending=False)
-Display_df = Post_df.head(20).copy()
+Display_df = Post_df.head(50).copy()
 
 styles = [
     dict(selector="tr:hover",
@@ -29,11 +29,11 @@ styles = [
                                ("border", "1px solid #eee"),
                                ("padding", "12px 35px"),
                                ("border-collapse", "collapse"),
-                               ("background", "#00cccc"),
+                               ("background", "#1F2441"),
                                ("text-transform", "uppercase"),
                                ("font-size", "18px")
                                ]),
-    dict(selector="td", props=[("color", "#999"),
+    dict(selector="td", props=[("color", "#605ESE"),
                                ("border", "1px solid #eee"),
                                ("padding", "12px 35px"),
                                ("border-collapse", "collapse"),
@@ -50,10 +50,11 @@ styles = [
 ]
 
 Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_df['link'].tolist()]
-Display_df['summary'] = Display_df['summary'].fillna('No Summary') 
+Display_df['summary'] = Display_df['summary'].fillna('No Summary')
+Display_df = Display_df.reset_index()
 Disp = Display_df.style.set_table_styles(styles)
 
 
 # In[]
 components.html(Disp.to_html(),width=1200, height=800, scrolling=True)
-#st.dataframe(data=Disp,width=1400, height=1000)
+
