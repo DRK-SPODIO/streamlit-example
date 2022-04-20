@@ -49,9 +49,20 @@ styles = [
     dict(selector="caption", props=[("caption-side", "bottom")])
 ]
 
+# CSS to inject contained in a string
+hide_table_row_index = """
+            <style>
+            tbody th {display:none}
+            .blank {display:none}
+            </style>
+            """
+
+# Inject CSS with Markdown
+st.markdown(hide_table_row_index, unsafe_allow_html=True)
+
 Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_df['link'].tolist()]
 Display_df['summary'] = Display_df['summary'].fillna('No Summary')
-Display_df = Display_df.reset_index()
+Display_df = Display_df.reset_index(drop=True)
 Disp = Display_df.style.set_table_styles(styles)
 
 
