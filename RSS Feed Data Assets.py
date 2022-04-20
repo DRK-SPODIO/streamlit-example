@@ -1240,3 +1240,14 @@ Post_URL = df.link.tolist()[50]
 page = requests.get(Post_URL,headers=headers)
 soup = BeautifulSoup(page.content, 'html.parser')
 
+# In[]
+# Generate Data Assets
+# RSS Links to excel file
+Link_df = pd.DataFrame()
+Link_df['RSS_links'] = links_RSS
+Link_df.to_excel('RSS_Links.xlsx',index=False)
+
+# Posts to Posts File
+Post_df = df[['published', 'title', 'link', 'summary']].copy()
+Post_df['published'] = Post_df.published.dt.date
+Post_df.to_excel('Post_History.xlsx', index=False)
