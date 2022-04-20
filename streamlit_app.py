@@ -3,6 +3,7 @@ import altair as alt
 import math
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 """
 # Welcome to Streamlit!
@@ -42,4 +43,4 @@ with st.echo(code_location='below'):
 
 Post_df = pd.read_excel('Post_History.xlsx')
 
-st.write(Post_df.style.to_html())
+components(Post_df.style.to_html())
