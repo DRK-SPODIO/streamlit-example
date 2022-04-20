@@ -63,6 +63,10 @@ st.markdown(hide_table_row_index, unsafe_allow_html=True)
 Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_df['link'].tolist()]
 Display_df['summary'] = Display_df['summary'].fillna('No Summary')
 Display_df = Display_df.reset_index(drop=True)
+
+# Clean up posts that include non-working links
+Display_df['summary'] = Display_df['summary'].str.replace('<p>The post <a href="https://www.sportsnet.ca/feed/" rel="nofollow">Why Stripling fits perfectly into Blue Jays&#8217; six-man pitching rotation</a> appeared first on <a href="https://www.sportsnet.ca" rel="nofollow">Sportsnet.ca</a>.</p>','',regex=False)
+
 Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 
