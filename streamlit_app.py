@@ -41,4 +41,5 @@ with st.echo(code_location='below'):
 
 
 Post_df = pd.read_excel('Post_History.xlsx')
-Post_df
+
+st.dataframe(Post_df.style.to_html(),width=1000)
