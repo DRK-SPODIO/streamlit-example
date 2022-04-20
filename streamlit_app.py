@@ -21,6 +21,34 @@ Add analytics to determine what posts are most relivent
 Post_df = pd.read_excel('Post_History.xlsx')
 Post_df = Post_df.sort_values('published',ascending=False)
 Display_df = Post_df.head(20).copy()
+
+styles = [
+    dict(selector="tr:hover",
+                props=[("background", "#f4f4f4")]),
+    dict(selector="th", props=[("color", "#fff"),
+                               ("border", "1px solid #eee"),
+                               ("padding", "12px 35px"),
+                               ("border-collapse", "collapse"),
+                               ("background", "#00cccc"),
+                               ("text-transform", "uppercase"),
+                               ("font-size", "18px")
+                               ]),
+    dict(selector="td", props=[("color", "#999"),
+                               ("border", "1px solid #eee"),
+                               ("padding", "12px 35px"),
+                               ("border-collapse", "collapse"),
+                               ("font-size", "15px")
+                               ]),
+    dict(selector="table", props=[
+                                    ("font-family" , 'Arial'),
+                                    ("margin" , "25px auto"),
+                                    ("border-collapse" , "collapse"),
+                                    ("border" , "1px solid #eee"),
+                                    ("border-bottom" , "2px solid #00cccc"),                                    
+                                      ]),
+    dict(selector="caption", props=[("caption-side", "bottom")])
+]
+Display_df.style.set_table_styles(styles).set_caption("SPODIO RSS Monitor")    
 Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' for x in Display_df['link'].tolist()]
 Display_df['summary'] = Display_df['summary'].fillna('No Summary') 
 # In[]
