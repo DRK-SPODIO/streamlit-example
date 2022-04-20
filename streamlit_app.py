@@ -48,9 +48,11 @@ styles = [
                                       ]),
     dict(selector="caption", props=[("caption-side", "bottom")])
 ]
-Display_df.style.set_table_styles(styles).set_caption("SPODIO RSS Monitor")    
+
+Display_df.style.set_table_styles(styles)    
 Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' for x in Display_df['link'].tolist()]
 Display_df['summary'] = Display_df['summary'].fillna('No Summary') 
-# In[]
 
+
+# In[]
 components.html(Display_df.style.to_html(),width=1200, height=800, scrolling=True)
