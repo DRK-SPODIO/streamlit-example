@@ -40,7 +40,11 @@ with st.echo(code_location='below'):
         .mark_circle(color='#0068c9', opacity=0.5)
         .encode(x='x:Q', y='y:Q'))
 
-
+# In[]
 Post_df = pd.read_excel('Post_History.xlsx')
+Post_df = Post_df.sort_values('published',ascending=False)
+Display_df = Post_df.head(10)
 
-components.html(Post_df.style.to_html(),width=1200, height=800, scrolling=True)
+# In[]
+
+components.html(Display_df.style.to_html(),width=1200, height=800, scrolling=True)
