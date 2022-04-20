@@ -56,4 +56,4 @@ Display_df.style.set_table_styles(styles)
 
 # In[]
 # components.html(Display_df.style.to_html(),width=1200, height=800, scrolling=True)
-st.markdown(Display_df.style.to_html())
+st.markdown(Display_df)
