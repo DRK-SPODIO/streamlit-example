@@ -43,4 +43,4 @@ with st.echo(code_location='below'):
 
 Post_df = pd.read_excel('Post_History.xlsx')
 
-components.html(Post_df.style.to_html())
+components.html(Post_df.style.to_html(),width=1200, height=800, scrolling=True)
