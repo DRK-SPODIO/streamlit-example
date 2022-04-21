@@ -15,12 +15,12 @@ Add analytics to determine which posts are most relivent/timely
 
 Note: Links in Summaries may not work (sometime RSS feedsmess them up)
     
-# Most recent 50 RSS posts
+# Most recent 100 RSS posts
 """
 # In[]
 Post_df = pd.read_excel('Post_History.xlsx')
 Post_df = Post_df.sort_values('published',ascending=False)
-Display_df = Post_df.head(50).copy()
+Display_df = Post_df.head(100).copy()
 
 styles = [
     dict(selector="tr:hover",
