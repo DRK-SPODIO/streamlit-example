@@ -59,7 +59,7 @@ hide_table_row_index = """
 
 # Inject CSS with Markdown
 st.markdown(hide_table_row_index, unsafe_allow_html=True)
-st.set_page_config(layout='wide')  # Set page to wide view
+#st.set_page_config(layout='wide')  # Set page to wide view
 
 Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_df['link'].tolist()]
 Display_df['summary'] = Display_df['summary'].fillna('No Summary')
