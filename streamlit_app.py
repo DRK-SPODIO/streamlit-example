@@ -76,5 +76,5 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 
 # In[]
-components.html(Table_Styler.to_html(),width=1000, height=900, scrolling=True)
+components.html(Table_Styler.to_html(),width=1900, height=1000, scrolling=True)
 
