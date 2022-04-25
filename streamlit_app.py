@@ -5,6 +5,10 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+
+# Set Widescreen format
+st.set_page_config(layout="wide")
+
 """
 # SPODIO RSS Feed Monitor
 Tracks and aggregates Sports RSS Feeds.
@@ -57,8 +61,6 @@ hide_table_row_index = """
             </style>
             """
 
-# Set Widescreen format
-st.set_page_config(layout="wide")
 # Inject CSS with Markdown
 st.markdown(hide_table_row_index, unsafe_allow_html=True)
 #st.set_page_config(layout='wide')  # Set page to wide view
