@@ -63,8 +63,7 @@ Post_df = df[['published', 'author', 'title', 'link', 'summary']].copy()
 Post_df = Post_df.drop_duplicates(subset=['author', 'title', 'link', 'summary'], keep='first').copy()
 # Fix missing authors
 Post_df['author'] = Post_df['author'].fillna('No author')
-# Fix dates for Excel
-#Post_df['published'] = Post_df.published.dt.date  # Depricated for posts that have no date
+
 # Write to excel File
 Post_df.to_excel('Post_History.xlsx', index=False)
 

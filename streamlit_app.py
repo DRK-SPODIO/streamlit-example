@@ -57,6 +57,8 @@ hide_table_row_index = """
             </style>
             """
 
+# Set Widescreen format
+st.set_page_config(layout="wide")
 # Inject CSS with Markdown
 st.markdown(hide_table_row_index, unsafe_allow_html=True)
 #st.set_page_config(layout='wide')  # Set page to wide view
