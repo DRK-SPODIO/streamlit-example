@@ -51,16 +51,15 @@ Dates_Clean = [x.astimezone(tz.UTC) if str(x) != 'nan' else x for x in Dates_Cle
 Dates_Clean = [x.replace(tzinfo=None) if str(x) != 'nan' else x for x in Dates_Clean]
 df['published'] = Dates_Clean
 
-# In[]
-
 # Select columns for Posts File
 Post_df = df[['published', 'author', 'title', 'link', 'summary']].copy()
 
-# TODO: Load older posts, update with new info, delete older records.
+# Load older posts, update with new info, delete older records.
 Old_Posts_df = pd.read_excel('Post_History.xlsx')
 Post_df.append(Old_Posts_df)
 
 Post_df = Post_df.drop_duplicates(subset=['author', 'title', 'link', 'summary'], keep='first').copy()
+
 # Fix missing authors
 Post_df['author'] = Post_df['author'].fillna('No author')
 
@@ -79,17 +78,22 @@ def cleanhtml(raw_html):
   cleantext = re.sub(CLEANR, ' ', raw_html)
   return cleantext
 
+# Clean up Summaries, prep for NLP workflows.
 CleanDisc = [cleanhtml(str(x)) for x in Post_df['summary'].tolist()]  # Remove HTML Tags
 CleanDisc = [re.sub(r'[^\w\s]', '', x) for x in CleanDisc]  # Remmove punctuation
 CleanDisc = [x.strip() for x in CleanDisc]  # cleanup leading/trailing white spaces
-CleanDisc = [" ".join(x.split()) for x in CleanDisc]  # cleanup internal white spaces
+CleanDisc = [" ".join(y.lower() for y in x.split()) for x in CleanDisc]  # cleanup internal white spaces
+
+#  Collect Summaries by Date
+CleanDisc_df = pd.DataFrame(CleanDisc,columns=['Summary'])
+CleanDisc_df['Date'] = Post_df['published'].tolist()
+CleanDisc_df['Date'] = CleanDisc_df["Date"].dt.date
+CleanDisc_Daily = CleanDisc_df.groupby(['Date'], as_index=False).agg({'Summary': ' '.join})
+
 Tokens = [x.split() for x in CleanDisc]
-Tokens = [[x.lower() for x in y] for y in Tokens]
 Tokens = [[x for x in y if x not in STOPWORDS] for y in Tokens]
 
-
 Bag_of_Words = [y for x in Tokens for y in x]
-#Bag_of_Words = [x for x in Bag_of_Words  if x not in STOPWORDS]
 Bagdf = pd.DataFrame(Bag_of_Words,columns=['Word'])
 Bagdf = Bagdf['Word'].value_counts()
 
