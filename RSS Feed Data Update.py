@@ -33,8 +33,8 @@ print('Time to complete', end-start)
 # Gather posts from each Feed into a single table.
 Post_Counts = []
 Feeds_DF = pd.DataFrame()
+print('Processing feeds...')
 for feed in feeds:
-    print(feed)
     Feed_DF = pd.DataFrame(feed[2])
     Post_Counts.append(len(feed[2]))
     Feeds_DF = Feeds_DF.append(Feed_DF)
@@ -43,7 +43,6 @@ for feed in feeds:
 df = Feeds_DF[['published', 'title', 'link', 'summary', 'author']].copy() # pass data to init
 
 # Fix dates and make Universal time
-import numpy as np
 Dates = df.published.tolist()
 Dates_Clean = [x.split(', ')[1] if ', ' in x else x for x in Dates]
 Dates_Clean = [x if 'HH:' not in x else x.split(' HH:')[0] for x in Dates_Clean]
@@ -58,16 +57,22 @@ Post_df = df[['published', 'author', 'title', 'link', 'summary']].copy()
 
 # Load older posts, update with new info, delete older records.
 Old_Posts_df = pd.read_excel('Post_History.xlsx')
-Post_df.append(Old_Posts_df)
+Post_df = Post_df.append(Old_Posts_df)
+Post_df['author'] = Post_df['author'].fillna('No author')
+Post_df['link'] = Post_df['link'].fillna('No Link')
+Post_df['summary'] = Post_df['summary'].fillna('No Summary')
 
-Post_df = Post_df.drop_duplicates(subset=['author', 'title', 'link', 'summary'], keep='last').copy()
+# In[]
+Post_df = Post_df.drop_duplicates(subset=['title', 'link', 'summary'], keep='last').copy()
 
 # Fix missing authors
-Post_df['author'] = Post_df['author'].fillna('No author')
+
 
 # In[]
 # Write to excel File
+print('Saving to Excel file...')
 Post_df.to_excel('Post_History.xlsx', index=False)
+print('Data update Complete')
 
 # In[]
 
@@ -84,6 +89,9 @@ STOPWORDS.extend(['nan','sports','post','continue','reading', 'appeared', 'satur
 def cleanhtml(raw_html):
   cleantext = re.sub(CLEANR, ' ', raw_html)
   return cleantext
+
+Post_df['link'] = Post_df['link'].fillna('No Link')
+Post_df['summary'] = Post_df['summary'].fillna('No Summary')
 
 # Clean up Summaries, prep for NLP workflows.
 CleanDisc = [cleanhtml(str(x)) for x in Post_df['summary'].tolist()]  # Remove HTML Tags
@@ -121,7 +129,7 @@ CleanDisc_df['Age'] =(CleanDisc_df['Age'] - CleanDisc_df['Age'].mean()) / CleanD
 # Take the inverse probability of Age
 CleanDisc_df['Age'] = [1 - st.norm.cdf(x) for x in CleanDisc_df['Age'].tolist()]
 # Get Top Level Domain (TLD) from RSS Link
-CleanDisc_df['Site'] = [re.findall('://([\w\-\.]+)',x)[0] if len(x) > 0 else x for x in Post_df['link'].tolist()]
+CleanDisc_df['Site'] = [re.findall('://([\w\-\.]+)',x)[0] if len(x) > 2 and x != 'No Link' else x for x in Post_df['link'].tolist()]
 
 """ Keywords that are driving the news may be of interest.  In the below experiment,
 we split aggregate summary & title text into tokens, exclude english stopwords, then
@@ -228,6 +236,7 @@ for Index, Row in CleanDisc_Final.iterrows():
 
 # In[]
 Token_Dates.to_csv('News_Tokens.csv')
+CleanDisc_Final.to_excel('Post_Analytics.xlsx')
 # In[]
 
 Bag_of_Words = [y for x in Tokens for y in x]
