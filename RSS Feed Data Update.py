@@ -61,11 +61,16 @@ Post_df = Post_df.append(Old_Posts_df)
 Post_df['author'] = Post_df['author'].fillna('No author')
 Post_df['link'] = Post_df['link'].fillna('No Link')
 Post_df['summary'] = Post_df['summary'].fillna('No Summary')
+Post_df['summary'] = [x if len(x) > 1 else 'No Summary' for x in Post_df['summary'].tolist()]
+Post_df['link'] = [x if len(x) > 1 else 'No Link' for x in Post_df['link'].tolist()]
+Post_df['author'] = [x if len(x) > 1 else 'No Author' for x in Post_df['author'].tolist()]
+
 
 # In[]
 Post_df = Post_df.drop_duplicates(subset=['title', 'link', 'summary'], keep='last').copy()
+# In[]
 
-# Fix missing authors
+
 
 
 # In[]
@@ -201,15 +206,7 @@ CleanDisc_Final = CleanDisc_Final.sort_values(by = ['Date', 'Token_Score_Aged'],
 
 CleanDisc_df['Token_Score_Aged'].plot.kde()
 
-
-# In[]
-
-
-
-        
-#CleanDisc_df['Token_values'] = [[[Token_Values[Tokens.index(x)] if x in Tokens else 0 for x in Sum_Tokens] for (Token_Values, Tokens) in zip(CleanDisc_Daily['Token_Values'].tolist(), CleanDisc_Daily['Tokens'].tolist())] for Sum_Tokens in CleanDisc_df['Tokens'].tolist()]
-
-
+CleanDisc_Final.to_excel('Post_Analytics.xlsx')
 
 
 # In[]
@@ -217,11 +214,7 @@ CleanDisc_df['Token_Score_Aged'].plot.kde()
 SiteCount_df = CleanDisc_df.groupby(['Site', 'Date']).size().reset_index(name="Posts")
 
 
-#Tokens = [x.split() for x in CleanDisc_df['Tokens'].tolist()]  # Depricated, more sophisticated cleaning in CleanDisc_df
-Tokens = [[x for x in y if x not in STOPWORDS] for y in CleanDisc_df['Tokens'].tolist()]
-Tokens = [[x for x in y if not x.isdigit()] for y in CleanDisc_df['Tokens'].tolist()]
 
-# In[]
 Token_Dates = pd.DataFrame()
 
 for Index, Row in CleanDisc_Final.iterrows():
@@ -234,10 +227,13 @@ for Index, Row in CleanDisc_Final.iterrows():
     Local_df = pd.DataFrame(Local_df)
     Token_Dates = Token_Dates.append(Local_df)
 
-# In[]
 Token_Dates.to_csv('News_Tokens.csv')
-CleanDisc_Final.to_excel('Post_Analytics.xlsx')
+
 # In[]
+
+#Tokens = [x.split() for x in CleanDisc_df['Tokens'].tolist()]  # Depricated, more sophisticated cleaning in CleanDisc_df
+Tokens = [[x for x in y if x not in STOPWORDS] for y in CleanDisc_df['Tokens'].tolist()]
+Tokens = [[x for x in y if not x.isdigit()] for y in CleanDisc_df['Tokens'].tolist()]
 
 Bag_of_Words = [y for x in Tokens for y in x]
 Bagdf = pd.DataFrame(Bag_of_Words,columns=['Word_Count'])
