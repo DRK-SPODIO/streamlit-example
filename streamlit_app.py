@@ -77,7 +77,7 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 
 # In[]
-components.html(Table_Styler.to_html(),width=1900, height=1000, scrolling=True)
+components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
 
 
 
@@ -95,4 +95,4 @@ Table_Rel_Styler = Display_Rel_df.style.set_table_styles(styles).hide_index()
 # Most Relivent 100 RSS posts
 """
 
-components.html(Table_Rel_Styler.to_html(),width=1900, height=1000, scrolling=True)
+components.html(Table_Rel_Styler.to_html(),width=2400, height=1000, scrolling=True)
