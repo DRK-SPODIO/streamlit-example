@@ -86,7 +86,7 @@ Rel_df = pd.read_excel('Post_Analytics.xlsx')
 Rel_df = Rel_df[~Rel_df['Post Text'].isin(['No Summary'])]
 Rel_df = Rel_df[['Token_Score_Aged','Date','Site', 'Link', 'Title', 'Post Text']]
 Display_Rel_df = Rel_df.head(100).copy()
-Display_Rel_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_Rel_df['link'].tolist()]
+Display_Rel_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_Rel_df['Link'].tolist()]
 Display_Rel_df = Display_Rel_df.reset_index(drop=True)
 
 Table_Rel_Styler = Display_Rel_df.style.set_table_styles(styles).hide_index()
