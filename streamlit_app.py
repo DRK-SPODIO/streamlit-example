@@ -90,10 +90,13 @@ Display_Rel_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post
 Display_Rel_df = Display_Rel_df.reset_index(drop=True)
 
 Table_Rel_Styler = Display_Rel_df.style.set_table_styles(styles).hide_index()
+
 """
 # SPODIO RSS Feed Analytics
     
 # Most Relivent 100 RSS posts
+TODO: Add topic selection (currently most reent relivent posts to all topics)
 """
 
+Topic_Selector = st.slider('Topic Group Selection [PLACEHOLDER]', min_value=1, max_value=20, value=1, step=1, help='Select a Topic Group', on_change=None)
 components.html(Table_Rel_Styler.to_html(),width=2400, height=1000, scrolling=True)
