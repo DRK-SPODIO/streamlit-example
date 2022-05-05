@@ -23,6 +23,7 @@ Note: Links in Summaries may not work (sometime RSS feedsmess them up)
 """
 # In[]
 Post_df = pd.read_excel('Post_History.xlsx')
+Post_df = Post_df[~Post_df['summary'].isin(['No Summary'])]
 Post_df = Post_df.sort_values('published',ascending=False)
 Display_df = Post_df.head(100).copy()
 
@@ -78,3 +79,19 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 # In[]
 components.html(Table_Styler.to_html(),width=1900, height=1000, scrolling=True)
 
+
+
+Rel_df = pd.read_excel('Post_History.xlsx')
+Rel_df = Rel_df[~Rel_df['summary'].isin(['No Summary'])]
+Rel_df = Rel_df.sort_values('published',ascending=False)
+Display_Rel_df = Rel_df.head(100).copy()
+Display_Rel_df = Display_Rel_df.reset_index(drop=True)
+
+Table_Rel_Styler = Display_Rel_df.style.set_table_styles(styles).hide_index()
+"""
+# SPODIO RSS Feed Analytics
+    
+# Most Relivent 100 RSS posts
+"""
+
+components.html(Table_Rel_Styler.to_html(),width=1900, height=1000, scrolling=True)
