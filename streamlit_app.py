@@ -81,9 +81,10 @@ components.html(Table_Styler.to_html(),width=1900, height=1000, scrolling=True)
 
 
 
-Rel_df = pd.read_excel('Post_History.xlsx')
-Rel_df = Rel_df[~Rel_df['summary'].isin(['No Summary'])]
-Rel_df = Rel_df.sort_values('published',ascending=False)
+Rel_df = pd.read_excel('Post_Analytics.xlsx')
+
+Rel_df = Rel_df[~Rel_df['Post Text'].isin(['No Summary'])]
+Rel_df = Rel_df[['Token_Score_Aged','Date','Site', 'Link', 'Title', 'Post Text']]
 Display_Rel_df = Rel_df.head(100).copy()
 Display_Rel_df = Display_Rel_df.reset_index(drop=True)
 
