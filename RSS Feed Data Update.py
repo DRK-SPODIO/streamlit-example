@@ -262,7 +262,8 @@ papers['paper_text_processed'] = papers['paper_text_processed'].map(lambda x: x.
 
 stop_words = stopwords.words('english')
 stop_words.extend(['from', 'subject', 're', 'edu', 'use', 'summary', 'http', 
-                   'https', 'update', 'year', 'view', 'views'])
+                   'https', 'update', 'year', 'view', 'views', 'site', 'lifestyle',
+                   'technology', 'news'])
 stop_words.extend(STOPWORDS)
 stop_words = list(set(stop_words))
 
@@ -380,6 +381,7 @@ print('Average topic coherence: %.4f.' % avg_topic_coherence)
 pprint(top_topics)
 Top_topics_df = pd.DataFrame(top_topics,columns=['Token_Map', 'Coherence'])
 Top_topics_df = Top_topics_df[['Coherence', 'Token_Map']]
+
 Topic_Word_Map = pd.DataFrame()
 for index, row in Top_topics_df.iterrows():
     temp_df = pd.DataFrame(row.Token_Map,columns=['Weight', 'Word'])
@@ -398,6 +400,7 @@ import matplotlib.pyplot as plt
 
 vis = pyLDAvis.gensim_models.prepare(model, corpus, dictionary)
 pyLDAvis.save_html(vis, 'Topic_Model.html')
+
 # In[]
 # Post Frequency by day and site
 SiteCount_df = CleanDisc_df.groupby(['Site', 'Date']).size().reset_index(name="Posts")
