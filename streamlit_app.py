@@ -78,7 +78,10 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 # In[]
 
-st.metric(label="Number of Posts", value=str(len(Post_df))+' Posts', delta=str(len(Post_df)+' Posts Today'))
+Post_Count = str(len(Post_df))+' Posts'
+New_Posts = str(len(Post_df))+' Posts Today'
+# In[]
+st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 
 #components.iframe("Topic_Model.html", width=2400, height=800)
 
