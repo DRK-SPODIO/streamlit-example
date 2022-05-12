@@ -2,9 +2,10 @@ from collections import namedtuple
 import altair as alt
 import math
 import pandas as pd
+import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
-
+from datetime import datetime
 
 # Set Widescreen format
 st.set_page_config(layout="wide")
@@ -79,7 +80,13 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 # In[]
 
 Post_Count = str(len(Post_df))+' Posts'
-New_Posts = str(len(Post_df))+' Posts Today'
+
+Age = pd.DataFrame()
+Age['Age'] = [datetime.utcnow() - x for x in Post_df['published'].tolist()] # Calculate Post age
+Age = Age['Age'] / np.timedelta64(1, 'h')  # Convert to hours
+Age = Age.iloc[[x < 24 for x in Age]]
+New_Posts = str(len(Age))+' Posts Today'
+
 # In[]
 st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 
