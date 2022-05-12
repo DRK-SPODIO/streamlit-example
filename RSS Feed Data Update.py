@@ -52,26 +52,40 @@ Dates_Clean = [x.astimezone(tz.UTC) if str(x) != 'nan' else x for x in Dates_Cle
 Dates_Clean = [x.replace(tzinfo=None) if str(x) != 'nan' else x for x in Dates_Clean]
 df['published'] = Dates_Clean
 
+# In[]
 # Select columns for Posts File
 Post_df = df[['published', 'author', 'title', 'link', 'summary']].copy()
-
 # Load older posts, update with new info, delete older records.
 Old_Posts_df = pd.read_excel('Post_History.xlsx')
+# Add Old Posts, clean up Post History
 Post_df = Post_df.append(Old_Posts_df)
 Post_df['author'] = Post_df['author'].fillna('No author')
 Post_df['link'] = Post_df['link'].fillna('No Link')
 Post_df['summary'] = Post_df['summary'].fillna('No Summary')
+
 Post_df['summary'] = [x if len(x) > 1 else 'No Summary' for x in Post_df['summary'].tolist()]
 Post_df['link'] = [x if len(x) > 1 else 'No Link' for x in Post_df['link'].tolist()]
 Post_df['author'] = [x if len(x) > 1 else 'No Author' for x in Post_df['author'].tolist()]
 
+# Remove Links from end of RSS feeds that used language from another link shorthand
+# on a non-related post (caused mixed language to be sent to the LDA model and duplicate posts)
+Post_df['summary'] = [x.split('<p>The post <a')[0] for x in Post_df['summary'].tolist()]
+Post_df['link'] = Post_df['link'].fillna('No Link')
+Post_df = Post_df[~Post_df['link'].str.contains('https://blog.beta.nostragamus.in')]
+Post_df['summary'] = Post_df['summary'].fillna('No Summary')
 
+# Drop Duplicates
 Post_df = Post_df.drop_duplicates(subset=['title', 'link', 'summary'], keep='first').copy()
+
 
 # Write to excel File
 print('Saving to Excel file...')
 Post_df.to_excel('Post_History.xlsx', index=False)
 print('Data update Complete')
+
+# In[]
+Selected = Post_df[Post_df['summary'].str.contains('Tom Brady')]
+
 
 # In[]
 
@@ -84,15 +98,17 @@ STOPWORDS = ["0o", "0s", "3a", "3b", "3d", "6b", "6o", "a", "a1", "a2", "a3", "a
 STOPWORDS.extend(['nan','sports','post','continue','reading', 'appeared', 'saturday',
                   'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
                   'appeared', 'sportsnetca', 'read', 'sportsnet', '2022', '22bet', 
-                  'summary','https', 'http'])
+                  'summary','https', 'http', 'outlook', 'twitter', 'facebook'])
+STOPWORDS.extend(['from', 'subject', 're', 'edu', 'use', 'summary', 'http',
+                  'https', 'update', 'year', 'view', 'views', 'site', 'lifestyle',
+                  'technology', 'news', 'ly', 'purpleptsd', 'live', 'stream'])
 
 
 def cleanhtml(raw_html):
   cleantext = re.sub(CLEANR, ' ', raw_html)
+  cleantext = re.sub(' +', ' ', cleantext)
   return cleantext
 
-Post_df['link'] = Post_df['link'].fillna('No Link')
-Post_df['summary'] = Post_df['summary'].fillna('No Summary')
 
 # Clean up Summaries, prep for NLP workflows.
 CleanDisc = [cleanhtml(str(x)) for x in Post_df['summary'].tolist()]  # Remove HTML Tags
@@ -130,7 +146,7 @@ CleanDisc_df['Age'] =(CleanDisc_df['Age'] - CleanDisc_df['Age'].mean()) / CleanD
 # Take the inverse probability of Age
 CleanDisc_df['Age'] = [1 - st.norm.cdf(x) for x in CleanDisc_df['Age'].tolist()]
 # Get Top Level Domain (TLD) from RSS Link
-CleanDisc_df['Site'] = [re.findall('://([\w\-\.]+)',x)[0] if len(x) > 2 and x != 'No Link' else x for x in Post_df['link'].tolist()]
+CleanDisc_df['Site'] = [re.findall(r'://([\w\-\.]+)',x)[0] if len(x) > 2 and x != 'No Link' else x for x in Post_df['link'].tolist()]
 
 """ Keywords that are driving the news may be of interest.  In the below experiment,
 we split aggregate summary & title text into tokens, exclude english stopwords, then
@@ -177,7 +193,10 @@ for Token_Set in CleanDisc_Daily['Token_Counts']:
     if len(Token_Set) > 1:
         mean = sum(Token_Set)/len(Token_Set)
         Stdev = np.sqrt(sum([((x - mean) ** 2) for x in Token_Set]) / len(Token_Set))
+        if Stdev == 0 or not Stdev == Stdev:
+            Stdev = 1
         Tokens_Counts_Normed.append([st.norm.cdf((x - mean) / Stdev) for x in Token_Set])
+        
     else:
         Tokens_Counts_Normed.append([])
 
@@ -226,11 +245,11 @@ CleanDisc_df = CleanDisc_df[CleanDisc_df['Token_Score_Aged'].notna()]
 CleanDisc_Final = CleanDisc_df[['Token_Score_Aged','Age', 'Date', 'Site', 'Author', 'Title', 'Post Text', 'Link', 'Tokens', 'Token_Map']]
 CleanDisc_Final = CleanDisc_Final.sort_values(by = ['Date', 'Token_Score_Aged'], ascending = [False, False], na_position = 'last')
 
-CleanDisc_df['Token_Score_Aged'].plot.kde()
-
-CleanDisc_Final.to_excel('Post_Analytics.xlsx')
 
 # In[]
+
+""" In the below experiment, we impliment a LDA model to find clusters of
+words that relate to a topic in the RSS feed"""
 
 import gensim
 from gensim.utils import simple_preprocess
@@ -245,25 +264,12 @@ from pprint import pprint
 # spacy for lemmatization
 import spacy
 
-
-
-papers = pd.DataFrame()
-papers['title'] = CleanDisc_Final['Title']
-papers['paper_text'] = CleanDisc_Final['Post Text']
-
-# Remove punctuation
-
-papers['paper_text_processed'] =[cleanhtml(str(post)) for post in papers['paper_text']]
-
-papers['paper_text_processed'] = papers['paper_text_processed'].map(lambda x: re.sub('[,\.!?]', '', x))
-# Convert the titles to lowercase
-papers['paper_text_processed'] = papers['paper_text_processed'].map(lambda x: x.lower())
-
-
 stop_words = stopwords.words('english')
 stop_words.extend(['from', 'subject', 're', 'edu', 'use', 'summary', 'http', 
                    'https', 'update', 'year', 'view', 'views', 'site', 'lifestyle',
-                   'technology', 'news'])
+                   'technology', 'news', 'ly', 'purpleptsd', 'live', 'stream',
+                   'twitter', 'facebook', 'youtube', 'app', 'prospectinsider', 
+                   'apps', 'fansided', 'fanside'])
 stop_words.extend(STOPWORDS)
 stop_words = list(set(stop_words))
 
@@ -277,7 +283,26 @@ def remove_stopwords(texts):
     return [[word for word in simple_preprocess(str(doc)) 
              if word not in stop_words] for doc in texts]
 
+
+# Initialize spacy 'en' model, keeping only tagger component (for efficiency)
+# python3 -m spacy download en
+nlp = spacy.load('en_core_web_lg', disable=['parser', 'ner'])
+
+print('Preprocessing Posts for LDA analysis...')
+papers = pd.DataFrame()
+papers['title'] = CleanDisc_Final['Title']
+papers['paper_text'] = CleanDisc_Final['Title'] + ".  " + CleanDisc_Final['Post Text']
+
+# Remove punctuation
+
+papers['paper_text_processed'] =[cleanhtml(str(post)) for post in papers['paper_text']]
+
+#papers['paper_text_processed'] = papers['paper_text_processed'].map(lambda x: re.sub('[,\.!?]', '', x))
+# Convert the titles to lowercase
+papers['paper_text_processed'] = papers['paper_text_processed'].map(lambda x: x.lower())
+
 data = papers.paper_text_processed.values.tolist()
+
 data_words = list(sent_to_words(data))
 
 # Build the bigram and trigram models
@@ -311,17 +336,14 @@ data_words = [x for x in data_words if len(x) > 0]
 
 # Form Bigrams
 data_words_bigrams = make_bigrams(data_words)
+data_words_trigrams = make_trigrams(data_words)
 
-# Initialize spacy 'en' model, keeping only tagger component (for efficiency)
-# python3 -m spacy download en
-nlp = spacy.load('en_core_web_lg', disable=['parser', 'ner'])
+
 
 # Do lemmatization keeping only noun, adj, vb, adv
-data_lemmatized = lemmatization(data_words_bigrams, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'])
-
-
-
+data_lemmatized = lemmatization(data_words_trigrams, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'])
 data_words = data_lemmatized
+
 
 # Create Dictionary
 id2word = corpora.Dictionary(data_words)
@@ -329,34 +351,36 @@ id2word = corpora.Dictionary(data_words)
 # Create Corpus
 texts = data_words
 
-# Remove rare and common tokens.
-
-
 # Create a dictionary representation of the documents.
 dictionary = Dictionary(texts)
 
-# Filter out words that occur less than 20 documents, or more than 50% of the documents.
-dictionary.filter_extremes(no_below=5, no_above=0.5)
+# Filter out words that occur less than 20 documents or more than 50% of documents.
+dictionary.filter_extremes(no_below=20, no_above=0.5)
 
 # Bag-of-words representation of the documents.
 corpus = [dictionary.doc2bow(doc) for doc in texts]
 
-print('Number of unique tokens: %d' % len(dictionary))
-print('Number of documents: %d' % len(corpus))
-
-# Train LDA model.
-
-
-# Set training parameters.
-num_topics = 20
-chunksize = 3500
-passes = 50
-iterations = 400
-eval_every = None  # Don't evaluate model perplexity, takes too much time.
-
 # Make an index to word dictionary.
 temp = dictionary[0]  # This is only to "load" the dictionary.
 id2word = dictionary.id2token
+
+print('Number of unique tokens: %d' % len(dictionary))
+print('Number of documents: %d' % len(corpus))
+print('Preprocessing for LDA model Complete')
+# In[]
+print('LDA Model is learning word clusters...')
+""" In the following experiment, we impliment a Latient Dirichlet Allocation
+model to estimate the distribution of contributions of words withiin an RSS
+Post to a set number of topics.  In the way, words that are not strictly
+applicable to specific topics """
+# Train LDA model.
+# Set training parameters.
+num_topics = 25
+chunksize = 3000
+passes = 50
+iterations = 400
+eval_every = None  # Don't evaluate model perplexity, takes too much time.
+#eval_every = 5
 
 model = LdaModel(
     corpus=corpus,
@@ -370,15 +394,63 @@ model = LdaModel(
     eval_every=eval_every
 )
 
+# In[]
+""" In the following experiment, we evaluate the efficacy of a hierachical
+Dirichlet Process to both characterize the number of topics contained in the
+RSS post feed and nest topics within each other.  For example, posts on the 
+NBA draft, would, ideally be clustered within all topics related to the NBA
+and be seperated from topics related to the NFL or other leagues/sports."""
+
+# print('Loading HDP Model...')
+# from gensim.models import HdpModel
+
+
+# model2 = HdpModel(corpus=corpus, 
+#                   id2word=id2word, 
+#                   max_chunks=None, 
+#                   max_time=60 * 5, chunksize=chunksize, 
+#                   var_converge=0.0001, outputdir=None, random_state=None)
+
+# #                  kappa=1.0, tau=64.0, K=15, T=150, 
+# #                  alpha=1, gamma=1, eta=0.01, scale=1.0, 
+
+# top_topics2 = model2.get_topics()
+# top_topics2_df = pd.DataFrame(top_topics2, columns=id2word.values())
+
+import pyLDAvis
+import pyLDAvis.gensim_models # don't skip this
+import matplotlib.pyplot as plt
+
+# vis2 = pyLDAvis.gensim_models.prepare(model2, corpus, dictionary)
+# pyLDAvis.save_html(vis2, 'HDP_Topic_Model.html')
+# Model_Runs = []
+# for x in range(0,4):
+#     model = LdaModel(
+#         corpus=corpus,
+#         id2word=id2word,
+#         chunksize=chunksize,
+#         alpha='auto',
+#         eta='auto',
+#         iterations=iterations,
+#         num_topics=num_topics+x*5,
+#         passes=passes,
+#         eval_every=eval_every
+#     )
+#     top_topics = model.top_topics(corpus)
+#     avg_topic_coherence = sum([t[1] for t in top_topics]) / num_topics
+#     print('Topic Count, Coherance',[num_topics + x*5, avg_topic_coherence])
+#     Model_Runs.append([num_topics + x*5, avg_topic_coherence, model])
+
+print('Learning Complete')
+# In[]
 
 top_topics = model.top_topics(corpus)
 
 # Average topic coherence is the sum of topic coherences of all topics, divided by the number of topics.
 avg_topic_coherence = sum([t[1] for t in top_topics]) / num_topics
 print('Average topic coherence: %.4f.' % avg_topic_coherence)
+#pprint(top_topics)
 
-
-pprint(top_topics)
 Top_topics_df = pd.DataFrame(top_topics,columns=['Token_Map', 'Coherence'])
 Top_topics_df = Top_topics_df[['Coherence', 'Token_Map']]
 
@@ -394,10 +466,8 @@ Topic_Word_Map.reset_index(drop=True)
 Topic_Matrix = model.get_topics()
 Topic_Matrix = np.transpose(Topic_Matrix)
 
-import pyLDAvis
-import pyLDAvis.gensim_models # don't skip this
-import matplotlib.pyplot as plt
 
+# Create Visual Report
 vis = pyLDAvis.gensim_models.prepare(model, corpus, dictionary)
 pyLDAvis.save_html(vis, 'Topic_Model.html')
 
@@ -424,29 +494,38 @@ print("Post data processed.")
 
 # In[]
 
-#Tokens = [x.split() for x in CleanDisc_df['Tokens'].tolist()]  # Depricated, more sophisticated cleaning in CleanDisc_df
-Tokens = [[x for x in y if x not in STOPWORDS] for y in CleanDisc_df['Tokens'].tolist()]
-Tokens = [[x for x in y if not x.isdigit()] for y in CleanDisc_df['Tokens'].tolist()]
+train_vecs = []
+for i in range(len(corpus)):
+    top_topics = (
+        model.get_document_topics(corpus[i],
+                                      minimum_probability=0.0)
+    )
+    topic_vec = [top_topics[i][1] for i in range(20)]
+    train_vecs.append(topic_vec)
+    
+split_df = pd.DataFrame(train_vecs, columns=['Topic '+str(x+1) for x in range(20)])
+CleanDisc_Final = pd.concat([CleanDisc_Final, split_df], axis=1)
 
-Bag_of_Words = [y for x in Tokens for y in x]
-Bagdf = pd.DataFrame(Bag_of_Words,columns=['Word_Count'])
-Bagdf = Bagdf['Word_Count'].value_counts()
+CleanDisc_Final['Token_Score_Aged'].plot.kde()
 
 # In[]
-# import sweetviz as sv
-# my_report = sv.analyze(Post_df)
-# my_report.show_html() # Default arguments will generate to "SWEETVIZ_REPORT.html"
+CleanDisc_Final['Topic'] = CleanDisc_Final[['Topic '+str(x+1) for x in range(20)]].idxmax(axis=1)
 
+CleanDisc_Final.to_excel('Post_Analytics.xlsx')
 
-# Checking Tags column for additional info.
-Feed_DF_Tags = Feeds_DF['tags'].tolist().copy()
-Tags = []
-for Taglist in Feed_DF_Tags:
-    if Taglist == Taglist:
-        Tags.append([x['term'] for x in Taglist])
-    else:
-        Tags.append([])
-        
-Tags_df = pd.DataFrame({'Tags': Tags})
-#Tags_df = pd.get_dummies(Tags_df.Tags.apply(pd.Series), prefix="", prefix_sep="")
-
+# In[]
+Record = CleanDisc_Final.iloc[0]
+Rec_Title = Record.Title
+Rec_Post_Text = Record['Post Text']
+Rec_Text = str(Rec_Title) + ' ' + str(Rec_Post_Text)
+Rec_Text_Clean = cleanhtml(Rec_Text)
+Rec_Text_Clean_Lower = Rec_Text_Clean.lower()
+Rec_Text_Tokens = sent_to_words([Rec_Text_Clean_Lower])
+Rec_Text_Tokes_Clean = remove_stopwords(Rec_Text_Tokens)
+Rec_Text_Tokes_Clean_Trigram = make_trigrams(Rec_Text_Tokes_Clean)
+Rec_Text_Tokes_Clean_Trigram = lemmatization(Rec_Text_Tokes_Clean_Trigram)
+Rec_Doc_Map = dictionary.doc2bow(Rec_Text_Tokes_Clean_Trigram[0])
+Rec_Top_Topics = model.get_document_topics(Rec_Doc_Map, minimum_probability=0.0)
+Rec_Topic_Vec = [Rec_Top_Topics[i][1] for i in range(20)]
+Rec_Topic_Probs = pd.DataFrame(Rec_Topic_Vec, index=['Topic '+str(x+1) for x in range(20)])
+Rec_Topic = Rec_Topic_Probs.idxmax(axis=0)

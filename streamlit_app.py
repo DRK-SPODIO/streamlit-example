@@ -78,7 +78,9 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 # In[]
 
-components.iframe("Topic_Model.html",width=2400, height=800)
+st.metric(label="Number of Posts", value=str(len(Post_df))+' Posts', delta=str(len(Post_df)+' Posts Today'))
+
+#components.iframe("Topic_Model.html", width=2400, height=800)
 
 components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
 
