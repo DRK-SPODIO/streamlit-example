@@ -19,6 +19,9 @@ import feedparser
 import re
 
 
+# =============================================================================
+# Load RSS Links and gather new posts
+# =============================================================================
 # Load RSS Links and convert to list
 links_RSS_df = pd.read_excel('RSS_Links.xlsx')
 links_RSS = links_RSS_df['RSS_links'].tolist()
@@ -26,9 +29,12 @@ links_RSS = links_RSS_df['RSS_links'].tolist()
 # Load RSS Posts from each link
 print('Getting RSS Posts')
 start = datetime.now()
+print('Started: ', start)
 feeds = [[datetime.now(), url, feedparser.parse(url)['entries']] for url in links_RSS]
 end = datetime.now()
+print('Completed: ', end)
 print('Time to complete', end-start)
+
 
 # Gather posts from each Feed into a single table.
 Post_Counts = []
@@ -52,7 +58,6 @@ Dates_Clean = [x.astimezone(tz.UTC) if str(x) != 'nan' else x for x in Dates_Cle
 Dates_Clean = [x.replace(tzinfo=None) if str(x) != 'nan' else x for x in Dates_Clean]
 df['published'] = Dates_Clean
 
-# In[]
 # Select columns for Posts File
 Post_df = df[['published', 'author', 'title', 'link', 'summary']].copy()
 # Load older posts, update with new info, delete older records.
@@ -63,7 +68,7 @@ Post_df['author'] = Post_df['author'].fillna('No author')
 Post_df['link'] = Post_df['link'].fillna('No Link')
 Post_df['summary'] = Post_df['summary'].fillna('No Summary')
 
-Post_df['summary'] = [x if len(x) > 1 else 'No Summary' for x in Post_df['summary'].tolist()]
+Post_df['summary'] = [x if len(x) > 4 else 'No Summary' for x in Post_df['summary'].tolist()]
 Post_df['link'] = [x if len(x) > 1 else 'No Link' for x in Post_df['link'].tolist()]
 Post_df['author'] = [x if len(x) > 1 else 'No Author' for x in Post_df['author'].tolist()]
 
@@ -72,10 +77,16 @@ Post_df['author'] = [x if len(x) > 1 else 'No Author' for x in Post_df['author']
 Post_df['summary'] = [x.split('<p>The post <a')[0] for x in Post_df['summary'].tolist()]
 Post_df['link'] = Post_df['link'].fillna('No Link')
 Post_df = Post_df[~Post_df['link'].str.contains('https://blog.beta.nostragamus.in')]
+
+# Fix posts that include views creating duplicates
 Post_df['summary'] = Post_df['summary'].fillna('No Summary')
+Post_df['summary'] = ['<p>'+x.split('&#160;views today')[1] if '&#160;views today ' in x else x for x in Post_df.summary.tolist()]
+Post_df['summary'] = [x.strip() for x in Post_df.summary.tolist()]
+
+Post_df = Post_df.sort_values('published', ascending=False).reset_index(drop=True)
 
 # Drop Duplicates
-Post_df = Post_df.drop_duplicates(subset=['title', 'link', 'summary'], keep='first').copy()
+Post_df = Post_df.drop_duplicates(subset=['published','title', 'link'], keep='first').copy()
 
 
 # Write to excel File
@@ -84,7 +95,7 @@ Post_df.to_excel('Post_History.xlsx', index=False)
 print('Data update Complete')
 
 # In[]
-Selected = Post_df[Post_df['summary'].str.contains('Tom Brady')]
+Selected = Post_df[Post_df['summary'].str.contains('NFL')]
 
 
 # In[]
@@ -101,7 +112,9 @@ STOPWORDS.extend(['nan','sports','post','continue','reading', 'appeared', 'satur
                   'summary','https', 'http', 'outlook', 'twitter', 'facebook'])
 STOPWORDS.extend(['from', 'subject', 're', 'edu', 'use', 'summary', 'http',
                   'https', 'update', 'year', 'view', 'views', 'site', 'lifestyle',
-                  'technology', 'news', 'ly', 'purpleptsd', 'live', 'stream'])
+                  'technology', 'news', 'ly', 'purpleptsd', 'live', 'stream', 
+                  'views', 'today', 'subscribe', 'bit', 'espnplus', 'youtubetv', 
+                  'publish', 'click'])
 
 
 def cleanhtml(raw_html):
@@ -148,6 +161,7 @@ CleanDisc_df['Age'] = [1 - st.norm.cdf(x) for x in CleanDisc_df['Age'].tolist()]
 # Get Top Level Domain (TLD) from RSS Link
 CleanDisc_df['Site'] = [re.findall(r'://([\w\-\.]+)',x)[0] if len(x) > 2 and x != 'No Link' else x for x in Post_df['link'].tolist()]
 
+# In[]
 """ Keywords that are driving the news may be of interest.  In the below experiment,
 we split aggregate summary & title text into tokens, exclude english stopwords, then
 find the count of each token for the day.  We then map these counts to tokens for each post.
@@ -355,7 +369,7 @@ texts = data_words
 dictionary = Dictionary(texts)
 
 # Filter out words that occur less than 20 documents or more than 50% of documents.
-dictionary.filter_extremes(no_below=20, no_above=0.5)
+dictionary.filter_extremes(no_below=5, no_above=0.5)
 
 # Bag-of-words representation of the documents.
 corpus = [dictionary.doc2bow(doc) for doc in texts]
@@ -514,7 +528,8 @@ CleanDisc_Final['Topic'] = CleanDisc_Final[['Topic '+str(x+1) for x in range(20)
 CleanDisc_Final.to_excel('Post_Analytics.xlsx')
 
 # In[]
-Record = CleanDisc_Final.iloc[0]
+Record = CleanDisc_Final.iloc[1]
+
 Rec_Title = Record.Title
 Rec_Post_Text = Record['Post Text']
 Rec_Text = str(Rec_Title) + ' ' + str(Rec_Post_Text)
@@ -528,4 +543,10 @@ Rec_Doc_Map = dictionary.doc2bow(Rec_Text_Tokes_Clean_Trigram[0])
 Rec_Top_Topics = model.get_document_topics(Rec_Doc_Map, minimum_probability=0.0)
 Rec_Topic_Vec = [Rec_Top_Topics[i][1] for i in range(20)]
 Rec_Topic_Probs = pd.DataFrame(Rec_Topic_Vec, index=['Topic '+str(x+1) for x in range(20)])
-Rec_Topic = Rec_Topic_Probs.idxmax(axis=0)
+Rec_Topic = Rec_Topic_Probs.idxmax(axis=0)[0]
+Rec_New_df = Rec_Topic_Probs.T
+Rec_New_df['Topic'] = Rec_Topic
+Rec_New_df['Tokens'] = Rec_Text_Tokes_Clean_Trigram
+Token_vals = list([dictionary.get(x[0]) for x in Rec_Doc_Map])
+Rec_New_df['Tokens_Values']  = Token_vals
+# In[]

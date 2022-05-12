@@ -111,7 +111,7 @@ Table_Rel_Styler = Display_Rel_df.style.set_table_styles(styles).hide_index()
 # SPODIO RSS Feed Analytics
     
 # Most Relivent 100 RSS posts
-TODO: Add topic selection (currently most reent relivent posts to all topics)
+TODO: Add topic selection (currently most recent relivent posts to all topics)
 """
 
 Topic_Selector = st.slider('Topic Group Selection [PLACEHOLDER]', min_value=1, max_value=20, value=1, step=1, help='Select a Topic Group', on_change=None)
