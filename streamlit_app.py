@@ -7,21 +7,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from datetime import datetime
 
-# Set Widescreen format
-st.set_page_config(layout="wide")
 
-"""
-# SPODIO RSS Feed Monitor
-Tracks and aggregates Sports RSS Feeds.
-
-TODO:
-Add analytics to determine which posts are most relivent/timely
-
-
-Note: Links in Summaries may not work (sometime RSS feedsmess them up)
-    
-# Most recent 100 RSS posts
-"""
 # In[]
 Post_df = pd.read_excel('Post_History.xlsx')
 Post_df = Post_df[~Post_df['summary'].isin(['No Summary'])]
@@ -78,28 +64,43 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 
 # In[]
+# Set Widescreen format
+st.set_page_config(layout="wide")
 
+# Header & Description
+"""
+# SPODIO RSS Feed Monitor
+Tracks and aggregates Sports RSS Feeds.
+
+TODO:
+Add analytics to determine which posts are most relivent/timely
+
+Note: Links in Summaries may not work (sometime RSS feeds mess them up)
+    
+"""
+# Post Count Widget
 Post_Count = str(len(Post_df))+' Posts'
-
 Age = pd.DataFrame()
 Age['Age'] = [datetime.utcnow() - x for x in Post_df['published'].tolist()] # Calculate Post age
 Age = Age['Age'] / np.timedelta64(1, 'h')  # Convert to hours
 Age = Age.iloc[[x < 24 for x in Age]]
 New_Posts = str(len(Age))+' Posts Today'
+st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 
 # In[]
-st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
+
 
 #components.iframe("Topic_Model.html", width=2400, height=800)
 
+"""# Most recent 100 RSS posts"""
 components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
 
-
-
 Rel_df = pd.read_excel('Post_Analytics.xlsx')
-
 Rel_df = Rel_df[~Rel_df['Post Text'].isin(['No Summary'])]
 Rel_df = Rel_df[['Token_Score_Aged','Date','Site', 'Link', 'Title', 'Post Text']]
+Rel_df = Rel_df.sort_values(by='Token_Score_Aged').reset_index()
+
+
 Display_Rel_df = Rel_df.head(100).copy()
 Display_Rel_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_Rel_df['Link'].tolist()]
 Display_Rel_df = Display_Rel_df.reset_index(drop=True)
