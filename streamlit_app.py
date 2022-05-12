@@ -7,6 +7,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from datetime import datetime
 
+st.set_page_config(layout="wide")
 
 # In[]
 Post_df = pd.read_excel('Post_History.xlsx')
@@ -65,7 +66,6 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 # In[]
 # Set Widescreen format
-st.set_page_config(layout="wide")
 
 # Header & Description
 """
