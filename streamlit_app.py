@@ -90,7 +90,7 @@ st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 # In[]
 
 
-#components.iframe("Topic_Model.html", width=2400, height=800)
+components.iframe("https://share.streamlit.io/drk-spodio/Topic_Model.html", width=2400, height=800)
 
 """# Most recent 100 RSS posts"""
 components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
