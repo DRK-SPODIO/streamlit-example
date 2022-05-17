@@ -90,7 +90,7 @@ st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 # In[]
 
 
-components.iframe("/Topic_Model.html", width=2400, height=800)
+#components.iframe("/Topic_Model.html", width=2400, height=800)
 
 """# Most recent 100 RSS posts"""
 components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
@@ -115,4 +115,5 @@ TODO: Add topic selection (currently most recent relivent posts to all topics)
 """
 
 Topic_Selector = st.slider('Topic Group Selection [PLACEHOLDER]', min_value=1, max_value=20, value=1, step=1, help='Select a Topic Group', on_change=None)
+
 components.html(Table_Rel_Styler.to_html(),width=2400, height=1000, scrolling=True)

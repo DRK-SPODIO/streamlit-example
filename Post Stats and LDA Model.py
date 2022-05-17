@@ -7,27 +7,24 @@ Created on Fri May 13 14:13:04 2022
 """
 
 
-
 # imports
 import pandas as pd
 import numpy as np
 import scipy.stats as st
 from datetime import datetime
 import re
+from lxml import etree
 
 
 # In[]
 
+# Load Post History
 Post_df = pd.read_excel('Post_History.xlsx')
 
-Selected = Post_df[Post_df['summary'].str.contains('NFL')]
 
 
-# In[]
 
 print('Processing Post data...')
-# Regular Expression to remove non-printable type
-CLEANR = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
 
 
 # Stopwords are words with little to no meaning value
@@ -35,29 +32,92 @@ import nltk
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 STOPWORDS = stopwords.words('english')
-STOPWORDS.extend(["0o", "0s", "3a", "3b", "3d", "6b", "6o", "a", "a1", "a2", "a3", "a4", "ab", "able", "about", "above", "abst", "ac", "accordance", "according", "accordingly", "across", "act", "actually", "ad", "added", "adj", "ae", "af", "affected", "affecting", "affects", "after", "afterwards", "ag", "again", "against", "ah", "ain", "ain't", "aj", "al", "all", "allow", "allows", "almost", "alone", "along", "already", "also", "although", "always", "am", "among", "amongst", "amoungst", "amount", "an", "and", "announce", "another", "any", "anybody", "anyhow", "anymore", "anyone", "anything", "anyway", "anyways", "anywhere", "ao", "ap", "apart", "apparently", "appear", "appreciate", "appropriate", "approximately", "ar", "are", "aren", "arent", "aren't", "arise", "around", "as", "a's", "aside", "ask", "asking", "associated", "at", "au", "auth", "av", "available", "aw", "away", "awfully", "ax", "ay", "az", "b", "b1", "b2", "b3", "ba", "back", "bc", "bd", "be", "became", "because", "become", "becomes", "becoming", "been", "before", "beforehand", "begin", "beginning", "beginnings", "begins", "behind", "being", "believe", "below", "beside", "besides", "best", "better", "between", "beyond", "bi", "bill", "biol", "bj", "bk", "bl", "bn", "both", "bottom", "bp", "br", "brief", "briefly", "bs", "bt", "bu", "but", "bx", "by", "c", "c1", "c2", "c3", "ca", "call", "came", "can", "cannot", "cant", "can't", "cause", "causes", "cc", "cd", "ce", "certain", "certainly", "cf", "cg", "ch", "changes", "ci", "cit", "cj", "cl", "clearly", "cm", "c'mon", "cn", "co", "com", "come", "comes", "con", "concerning", "consequently", "consider", "considering", "contain", "containing", "contains", "corresponding", "could", "couldn", "couldnt", "couldn't", "course", "cp", "cq", "cr", "cry", "cs", "c's", "ct", "cu", "currently", "cv", "cx", "cy", "cz", "d", "d2", "da", "date", "dc", "dd", "de", "definitely", "describe", "described", "despite", "detail", "df", "di", "did", "didn", "didn't", "different", "dj", "dk", "dl", "do", "does", "doesn", "doesn't", "doing", "don", "done", "don't", "down", "downwards", "dp", "dr", "ds", "dt", "du", "due", "during", "dx", "dy", "e", "e2", "e3", "ea", "each", "ec", "ed", "edu", "ee", "ef", "effect", "eg", "ei", "eight", "eighty", "either", "ej", "el", "eleven", "else", "elsewhere", "em", "empty", "en", "end", "ending", "enough", "entirely", "eo", "ep", "eq", "er", "es", "especially", "est", "et", "et-al", "etc", "eu", "ev", "even", "ever", "every", "everybody", "everyone", "everything", "everywhere", "ex", "exactly", "example", "except", "ey", "f", "f2", "fa", "far", "fc", "few", "ff", "fi", "fifteen", "fifth", "fify", "fill", "find", "fire", "first", "five", "fix", "fj", "fl", "fn", "fo", "followed", "following", "follows", "for", "former", "formerly", "forth", "forty", "found", "four", "fr", "from", "front", "fs", "ft", "fu", "full", "further", "furthermore", "fy", "g", "ga", "gave", "ge", "get", "gets", "getting", "gi", "give", "given", "gives", "giving", "gj", "gl", "go", "goes", "going", "gone", "got", "gotten", "gr", "greetings", "gs", "gy", "h", "h2", "h3", "had", "hadn", "hadn't", "happens", "hardly", "has", "hasn", "hasnt", "hasn't", "have", "haven", "haven't", "having", "he", "hed", "he'd", "he'll", "hello", "help", "hence", "her", "here", "hereafter", "hereby", "herein", "heres", "here's", "hereupon", "hers", "herself", "hes", "he's", "hh", "hi", "hid", "him", "himself", "his", "hither", "hj", "ho", "home", "hopefully", "how", "howbeit", "however", "how's", "hr", "hs", "http", "hu", "hundred", "hy", "i", "i2", "i3", "i4", "i6", "i7", "i8", "ia", "ib", "ibid", "ic", "id", "i'd", "ie", "if", "ig", "ignored", "ih", "ii", "ij", "il", "i'll", "im", "i'm", "immediate", "immediately", "importance", "important", "in", "inasmuch", "inc", "indeed", "index", "indicate", "indicated", "indicates", "information", "inner", "insofar", "instead", "interest", "into", "invention", "inward", "io", "ip", "iq", "ir", "is", "isn", "isn't", "it", "itd", "it'd", "it'll", "its", "it's", "itself", "iv", "i've", "ix", "iy", "iz", "j", "jj", "jr", "js", "jt", "ju", "just", "k", "ke", "keep", "keeps", "kept", "kg", "kj", "km", "know", "known", "knows", "ko", "l", "l2", "la", "largely", "last", "lately", "later", "latter", "latterly", "lb", "lc", "le", "least", "les", "less", "lest", "let", "lets", "let's", "lf", "like", "liked", "likely", "line", "little", "lj", "ll", "ll", "ln", "lo", "look", "looking", "looks", "los", "lr", "ls", "lt", "ltd", "m", "m2", "ma", "made", "mainly", "make", "makes", "many", "may", "maybe", "me", "mean", "means", "meantime", "meanwhile", "merely", "mg", "might", "mightn", "mightn't", "mill", "million", "mine", "miss", "ml", "mn", "mo", "more", "moreover", "most", "mostly", "move", "mr", "mrs", "ms", "mt", "mu", "much", "mug", "must", "mustn", "mustn't", "my", "myself", "n", "n2", "na", "name", "namely", "nay", "nc", "nd", "ne", "near", "nearly", "necessarily", "necessary", "need", "needn", "needn't", "needs", "neither", "never", "nevertheless", "new", "next", "ng", "ni", "nine", "ninety", "nj", "nl", "nn", "no", "nobody", "non", "none", "nonetheless", "noone", "nor", "normally", "nos", "not", "noted", "nothing", "novel", "now", "nowhere", "nr", "ns", "nt", "ny", "o", "oa", "ob", "obtain", "obtained", "obviously", "oc", "od", "of", "off", "often", "og", "oh", "oi", "oj", "ok", "okay", "ol", "old", "om", "omitted", "on", "once", "one", "ones", "only", "onto", "oo", "op", "oq", "or", "ord", "os", "ot", "other", "others", "otherwise", "ou", "ought", "our", "ours", "ourselves", "out", "outside", "over", "overall", "ow", "owing", "own", "ox", "oz", "p", "p1", "p2", "p3", "page", "pagecount", "pages", "par", "part", "particular", "particularly", "pas", "past", "pc", "pd", "pe", "per", "perhaps", "pf", "ph", "pi", "pj", "pk", "pl", "placed", "please", "plus", "pm", "pn", "po", "poorly", "possible", "possibly", "potentially", "pp", "pq", "pr", "predominantly", "present", "presumably", "previously", "primarily", "probably", "promptly", "proud", "provides", "ps", "pt", "pu", "put", "py", "q", "qj", "qu", "que", "quickly", "quite", "qv", "r", "r2", "ra", "ran", "rather", "rc", "rd", "re", "readily", "really", "reasonably", "recent", "recently", "ref", "refs", "regarding", "regardless", "regards", "related", "relatively", "research", "research-articl", "respectively", "resulted", "resulting", "results", "rf", "rh", "ri", "right", "rj", "rl", "rm", "rn", "ro", "rq", "rr", "rs", "rt", "ru", "run", "rv", "ry", "s", "s2", "sa", "said", "same", "saw", "say", "saying", "says", "sc", "sd", "se", "sec", "second", "secondly", "section", "see", "seeing", "seem", "seemed", "seeming", "seems", "seen", "self", "selves", "sensible", "sent", "serious", "seriously", "seven", "several", "sf", "shall", "shan", "shan't", "she", "shed", "she'd", "she'll", "shes", "she's", "should", "shouldn", "shouldn't", "should've", "show", "showed", "shown", "showns", "shows", "si", "side", "significant", "significantly", "similar", "similarly", "since", "sincere", "six", "sixty", "sj", "sl", "slightly", "sm", "sn", "so", "some", "somebody", "somehow", "someone", "somethan", "something", "sometime", "sometimes", "somewhat", "somewhere", "soon", "sorry", "sp", "specifically", "specified", "specify", "specifying", "sq", "sr", "ss", "st", "still", "stop", "strongly", "sub", "substantially", "successfully", "such", "sufficiently", "suggest", "sup", "sure", "sy", "system", "sz", "t", "t1", "t2", "t3", "take", "taken", "taking", "tb", "tc", "td", "te", "tell", "ten", "tends", "tf", "th", "than", "thank", "thanks", "thanx", "that", "that'll", "thats", "that's", "that've", "the", "their", "theirs", "them", "themselves", "then", "thence", "there", "thereafter", "thereby", "thered", "therefore", "therein", "there'll", "thereof", "therere", "theres", "there's", "thereto", "thereupon", "there've", "these", "they", "theyd", "they'd", "they'll", "theyre", "they're", "they've", "thickv", "thin", "think", "third", "this", "thorough", "thoroughly", "those", "thou", "though", "thoughh", "thousand", "three", "throug", "through", "throughout", "thru", "thus", "ti", "til", "tip", "tj", "tl", "tm", "tn", "to", "together", "too", "took", "top", "toward", "towards", "tp", "tq", "tr", "tried", "tries", "truly", "try", "trying", "ts", "t's", "tt", "tv", "twelve", "twenty", "twice", "two", "tx", "u", "u201d", "ue", "ui", "uj", "uk", "um", "un", "under", "unfortunately", "unless", "unlike", "unlikely", "until", "unto", "uo", "up", "upon", "ups", "ur", "us", "use", "used", "useful", "usefully", "usefulness", "uses", "using", "usually", "ut", "v", "va", "value", "various", "vd", "ve", "ve", "very", "via", "viz", "vj", "vo", "vol", "vols", "volumtype", "vq", "vs", "vt", "vu", "w", "wa", "want", "wants", "was", "wasn", "wasnt", "wasn't", "way", "we", "wed", "we'd", "welcome", "well", "we'll", "well-b", "went", "were", "we're", "weren", "werent", "weren't", "we've", "what", "whatever", "what'll", "whats", "what's", "when", "whence", "whenever", "when's", "where", "whereafter", "whereas", "whereby", "wherein", "wheres", "where's", "whereupon", "wherever", "whether", "which", "while", "whim", "whither", "who", "whod", "whoever", "whole", "who'll", "whom", "whomever", "whos", "who's", "whose", "why", "why's", "wi", "widely", "will", "willing", "wish", "with", "within", "without", "wo", "won", "wonder", "wont", "won't", "words", "world", "would", "wouldn", "wouldnt", "wouldn't", "www", "x", "x1", "x2", "x3", "xf", "xi", "xj", "xk", "xl", "xn", "xo", "xs", "xt", "xv", "xx", "y", "y2", "yes", "yet", "yj", "yl", "you", "youd", "you'd", "you'll", "your", "youre", "you're", "yours", "yourself", "yourselves", "you've", "yr", "ys", "yt", "z", "zero", "zi", "zz"])
-STOPWORDS.extend(['nan','sports','post','continue','reading', 'appeared', 'saturday',
-                  'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
-                  'appeared', 'sportsnetca', 'read', 'sportsnet', '2022', '22bet', 
-                  'summary','https', 'http', 'outlook', 'twitter', 'facebook',
-                  'from', 'subject', 're', 'edu', 'use', 'summary', 'http',
-                  'https', 'update', 'year', 'view', 'views', 'site', 'lifestyle',
-                  'technology', 'news', 'ly', 'purpleptsd', 'live', 'stream', 
-                  'views', 'today', 'subscribe', 'bit', 'espnplus', 'youtubetv', 
-                  'publish', 'click', 'from', 'subject', 're', 'edu', 'use', 'summary', 'http', 
-                   'https', 'update', 'year', 'view', 'views', 'site', 'lifestyle',
-                   'technology', 'news', 'ly', 'purpleptsd', 'live', 'stream',
-                   'twitter', 'facebook', 'youtube', 'app', 'prospectinsider', 
-                   'apps', 'fansided', 'fanside', 'fansided, podcast'])
+STOPWORDS.extend(["0o", "0s", "3a", "3b", "3d", "6b", "6o", "a", "a1", "a2",
+                  "a3", "a4", "ab", "able", "about", "above", "abst", "ac",
+                  "accordance", "according", "accordingly", "across", "act",
+                  "actually", "ad", "added", "adj", "ae", "af", "affected",
+                  "affecting", "affects", "after", "afterwards", "ag", "again",
+                  "against", "ah", "ain", "ain't", "aj", "al", "all", "allow",
+                  "allows", "almost", "alone", "along", "already", "also",
+                  "although", "always", "am", "among", "amongst", "amoungst",
+                  "amount", "an", "and", "announce", "another", "any",
+                  "anybody", "anyhow", "anymore", "anyone", "anything",
+                  "anyway", "anyways", "anywhere", "ao", "ap", "apart",
+                  "apparently", "appear", "appreciate", "appropriate",
+                  "approximately", "ar", "are", "aren", "arent", "aren't",
+                  "arise", "around", "as", "a's", "aside", "ask", "asking",
+                  "associated", "at", "au", "auth", "av", "available", "aw",
+                  "away", "awfully", "ax", "ay", "az", "b", "b1", "b2", "b3",
+                  "ba", "back", "bc", "bd", "be", "became", "because",
+                  "become", "becomes", "becoming", "been", "before",
+                  "beforehand", "begin", "beginning", "beginnings",
+                  "begins", "behind", "being", "believe", "below", "beside",
+                  "besides", "best", "better", "between", "beyond", "bi",
+                  "bill", "biol", "bj", "bk", "bl", "bn", "both", "bottom",
+                  "bp", "br", "brief", "briefly", "bs", "bt", "bu", "but",
+                  "bx", "by", "c", "c1", "c2", "c3", "ca", "call", "came",
+                  "can", "cannot", "cant", "can't", "cause", "causes", "cc",
+                  "cd", "ce", "certain", "certainly", "cf", "cg", "ch",
+                  "changes", "ci", "cit", "cj", "cl", "clearly", "cm", "c'mon",
+                  "cn", "co", "com", "come", "comes", "con", "concerning",
+                  "consequently", "consider", "considering", "contain",
+                  "containing", "contains", "corresponding", "could",
+                  "couldn", "couldnt", "couldn't", "course", "cp", "cq", "cr",
+                  "cry", "cs", "c's", "ct", "cu", "currently", "cv", "cx",
+                  "cy", "cz", "d", "d2", "da", "date", "dc", "dd", "de",
+                  "definitely", "describe", "described", "despite", "detail",
+                  "df", "di", "did", "didn", "didn't", "different", "dj", "dk", 
+                  "dl", "do", "does", "doesn", "doesn't", "doing", "don", 
+                  "done", "don't", "down", "downwards", "dp", "dr", "ds", "dt", 
+                  "du", "due", "during", "dx", "dy", "e", "e2", "e3", "ea", 
+                  "each", "ec", "ed", "edu", "ee", "ef", "effect", "eg", "ei", 
+                  "eight", "eighty", "either", "ej", "el", "eleven", "else", 
+                  "elsewhere", "em", "empty", "en", "end", "ending", "enough", 
+                  "entirely", "eo", "ep", "eq", "er", "es", "especially", 
+                  "est", "et", "et-al", "etc", "eu", "ev", "even", "ever", 
+                  "every", "everybody", "everyone", "everything", "everywhere", 
+                  "ex", "exactly", "example", "except", "ey", "f", "f2", "fa", 
+                  "far", "fc", "few", "ff", "fi", "fifteen", "fifth", "fify", "fill", "find", "fire", "first", "five", "fix", "fj", "fl", "fn", "fo", "followed", "following", "follows", "for", "former", "formerly", "forth", "forty", "found", "four", "fr", "from", "front", "fs", "ft", "fu", "full", "further", "furthermore", "fy", "g", "ga", "gave", "ge", "get", "gets", "getting", "gi", "give", "given", "gives", "giving", "gj", "gl", "go", "goes", "going", "gone", "got", "gotten", "gr", "greetings", "gs", "gy", "h", "h2", "h3", "had", "hadn", "hadn't", "happens", "hardly", "has", "hasn", "hasnt", "hasn't", "have", "haven", "haven't", "having", "he", "hed", "he'd", "he'll", "hello", "help", "hence", "her", "here", "hereafter", "hereby", "herein", "heres", "here's", "hereupon", "hers", "herself", "hes", "he's", "hh", "hi", "hid", "him", "himself", "his", "hither", "hj", "ho", "home", "hopefully", "how", "howbeit", "however", "how's", "hr", "hs", "http", "hu", "hundred", "hy", "i", "i2", "i3", "i4", "i6", "i7", "i8", "ia", "ib", "ibid", "ic", "id", "i'd", "ie", "if", "ig", "ignored", "ih", "ii", "ij", "il", "i'll", "im", "i'm", "immediate", "immediately", "importance", "important", "in", "inasmuch", "inc", "indeed", "index", "indicate", "indicated", "indicates", "information", "inner", "insofar", "instead", "interest", "into", "invention", "inward", "io", "ip", "iq", "ir", "is", "isn", "isn't", "it", "itd", "it'd", "it'll", "its", "it's", "itself", "iv", "i've", "ix", "iy", "iz", "j", "jj", "jr", "js", "jt", "ju", "just", "k", "ke", "keep", "keeps", "kept", "kg", "kj", "km", "know", "known", "knows", "ko", "l", "l2", "la", "largely", "last", "lately", "later", "latter", "latterly", "lb", "lc", "le", "least", "les", "less", "lest", "let", "lets", "let's", "lf", "like", "liked", "likely", "line", "little", "lj", "ll", "ll", "ln", "lo", "look", "looking", "looks", "los", "lr", "ls", "lt", "ltd", "m", "m2", "ma", "made", "mainly", "make", "makes", "many", "may", "maybe", "me", "mean", "means", "meantime", "meanwhile", "merely", "mg", "might", "mightn", "mightn't", "mill", "million", "mine", "miss", "ml", "mn", "mo", "more", "moreover", "most", "mostly", "move", "mr", "mrs", "ms", "mt", "mu", "much", "mug", "must", "mustn", "mustn't", "my", "myself", "n", "n2", "na", "name", "namely", "nay", "nc", "nd", "ne", "near", "nearly", "necessarily", "necessary", "need", "needn", "needn't", "needs", "neither", "never", "nevertheless", "next", "ng", "ni", "nine", "ninety", "nl", "nn", "no", "nobody", "non", "none", "nonetheless", "noone", "nor", "normally", "nos", "not", "noted", "nothing", "novel", "now", "nowhere", "nr", "ns", "nt", "o", "oa", "ob", "obtain", "obtained", "obviously", "oc", "od", "of", "off", "often", "og", "oh", "oi", "oj", "ok", "okay", "ol", "old", "om", "omitted", "on", "once", "one", "ones", "only", "onto", "oo", "op", "oq", "or", "ord", "os", "ot", "other", "others", "otherwise", "ou", "ought", "our", "ours", "ourselves", "out", "outside", "over", "overall", "ow", "owing", "own", "ox", "oz", "p", "p1", "p2", "p3", "page", "pagecount", "pages", "par", "part", "particular", "particularly", "pas", "past", "pc", "pd", "pe", "per", "perhaps", "pf", "ph", "pi", "pj", "pk", "pl", "placed", "please", "plus", "pm", "pn", "po", "poorly", "possible", "possibly", "potentially", "pp", "pq", "pr", "predominantly", "present", "presumably", "previously", "primarily", "probably", "promptly", "proud", "provides", "ps", "pt", "pu", "put", "py", "q", "qj", "qu", "que", "quickly", "quite", "qv", "r", "r2", "ra", "ran", "rather", "rc", "rd", "re", "readily", "really", "reasonably", "recent", "recently", "ref", "refs", "regarding", "regardless", "regards", "related", "relatively", "research", "research-articl", "respectively", "resulted", "resulting", "results", "rf", "rh", "ri", "right", "rj", "rl", "rm", "rn", "ro", "rq", "rr", "rs", "rt", "ru", "run", "rv", "ry", "s", "s2", "sa", "said", "same", "saw", "say", "saying", "says", "sc", "sd", "se", "sec", "second", "secondly", "section", "see", "seeing", "seem", "seemed", "seeming", "seems", "seen", "self", "selves", "sensible", "sent", "serious", "seriously", "seven", "several", "sf", "shall", "shan", "shan't", "she", "shed", "she'd", "she'll", "shes", "she's", "should", "shouldn", "shouldn't", "should've", "show", "showed", "shown", "showns", "shows", "si", "side", "significant", "significantly", "similar", "similarly", "since", "sincere", "six", "sixty", "sj", "sl", "slightly", "sm", "sn", "so", "some", "somebody", "somehow", "someone", "somethan", "something", "sometime", "sometimes", "somewhat", "somewhere", "soon", "sorry", "sp", "specifically", "specified", "specify", "specifying", "sq", "sr", "ss", "st", "still", "stop", "strongly", "sub", "substantially", "successfully", "such", "sufficiently", "suggest", "sup", "sure", "sy", "system", "sz", "t", "t1", "t2", "t3", "take", "taken", "taking", "tb", "tc", "td", "te", "tell", "ten", "tends", "tf", "th", "than", "thank", "thanks", "thanx", "that", "that'll", "thats", "that's", "that've", "the", "their", "theirs", "them", "themselves", "then", "thence", "there", "thereafter", "thereby", "thered", "therefore", "therein", "there'll", "thereof", "therere", "theres", "there's", "thereto", "thereupon", "there've", "these", "they", "theyd", "they'd", "they'll", "theyre", "they're", "they've", "thickv", "thin", "think", "third", "this", "thorough", "thoroughly", "those", "thou", "though", "thoughh", "thousand", "three", "throug", "through", "throughout", "thru", "thus", "ti", "til", "tip", "tj", "tl", "tm", "tn", "to", "together", "too", "took", "top", "toward", "towards", "tp", "tq", "tr", "tried", "tries", "truly", "try", "trying", "ts", "t's", "tt", "tv", "twelve", "twenty", "twice", "two", "tx", "u", "u201d", "ue", "ui", "uj", "uk", "um", "un", "under", "unfortunately", "unless", "unlike", "unlikely", "until", "unto", "uo", "up", "upon", "ups", "ur", "us", "use", "used", "useful", "usefully", "usefulness", "uses", "using", "usually", "ut", "v", "va", "value", "various", "vd", "ve", "ve", "very", "via", "viz", "vj", "vo", "vol", "vols", "volumtype", "vq", "vs", "vt", "vu", "w", "wa", "want", "wants", "was", "wasn", "wasnt", "wasn't", "way", "we", "wed", "we'd", "welcome", "well", "we'll", "well-b", "went", "were", "we're", "weren", "werent", "weren't", "we've", "what", "whatever", "what'll", "whats", "what's", "when", "whence", "whenever", "when's", "where", "whereafter", "whereas", "whereby", "wherein", "wheres", "where's", "whereupon", "wherever", "whether", "which", "while", "whim", "whither", "who", "whod", "whoever", "whole", "who'll", "whom", "whomever", "whos", "who's", "whose", "why", "why's", "wi", "widely", "will", "willing", "wish", "with", "within", "without", "wo", "won", "wonder", "wont", "won't", "words", "world", "would", "wouldn", "wouldnt", "wouldn't", "www", "x", "x1", "x2", "x3", "xf", "xi", "xj", "xk", "xl", "xn", "xo", "xs", "xt", "xv", "xx", "y", "y2", "yes", "yet", "yj", "yl", "you", "youd", "you'd", "you'll", "your", "youre", "you're", "yours", "yourself", "yourselves", "you've", "yr", "ys", "yt", "z", "zero", "zi", "zz"])
+
+
+STOPWORDS.extend(['nan', 'sports', 'post', 'continue', 'reading', 'appeared', 
+                  'saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 
+                  'thursday', 'friday', 'appeared', 'sportsnetca', 'read', 
+                  'sportsnet', '2022', '22bet', 'summary', 'https', 'http', 
+                  'outlook', 'twitter', 'facebook', 'from', 'subject', 're', 
+                  'edu', 'use', 'summary', 'http', 'https', 'update', 'year', 
+                  'view', 'views', 'site', 'lifestyle', 'technology', 'news', 
+                  'ly', 'purpleptsd', 'live', 'stream', 'views', 'today',
+                  'subscribe', 'bit', 'espn', 'espns', 'espnplus', 'youtubetv',  
+                  'publish', 'click', 'from', 'subject', 're', 'edu', 'use', 
+                  'summary', 'http',  'https', 'update', 'year', 'view', 
+                  'views', 'site', 'lifestyle', 'technology', 'news', 'ly', 
+                  'purpleptsd', 'live', 'stream', 'twitter', 'facebook', 
+                  'youtube', 'app', 'prospectinsider',  'apps', 'fansided', 
+                  'fanside', 'fansided', 'podcast',  'entertainment', 'watch', 
+                  'update', 'updates', 'link', 'links', 'streamed', 'updated', 
+                  'sky', 'rte', 'happen', 'april'])
+
+STOPWORDS.extend(['league', 'game', 'team', 'player', 'season', 'time',
+                 'play', 'week', 'teams', 'games', 'players', 'fan', 'fans'])
 
 STOPWORDS = list(set(STOPWORDS))
+
+# Depricated in favor or lxml approach
+# Regular Expression to remove non-printable type
+# CLEANR = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
+
+# def cleanhtml(raw_html):
+#   cleantext = re.sub(CLEANR, ' ', raw_html)
+#   cleantext = re.sub(' +', ' ', cleantext)
+#   return cleantext
+
 
 
 
 def cleanhtml(raw_html):
-  cleantext = re.sub(CLEANR, ' ', raw_html)
-  cleantext = re.sub(' +', ' ', cleantext)
-  return cleantext
+    response = etree.HTML(text=raw_html)
+    return response.xpath('string(.)')
 
 
 # Clean up Summaries, prep for NLP workflows.
@@ -74,7 +134,7 @@ CleanTitle = [" ".join(y.lower() for y in x.split()) for x in CleanTitle]  # cle
 
 Combined = []
 for (Summary, Title) in zip(CleanDisc, CleanTitle):
-    Combined.append(Summary + ' ' + Title)
+    Combined.append(Title + ' ' + Summary)
 
 CleanDisc = Combined
 #  Collect Summaries by Date
@@ -96,9 +156,9 @@ CleanDisc_df['Age'] =(CleanDisc_df['Age'] - CleanDisc_df['Age'].mean()) / CleanD
 # Take the inverse probability of Age
 CleanDisc_df['Age'] = [1 - st.norm.cdf(x) for x in CleanDisc_df['Age'].tolist()]
 # Get Top Level Domain (TLD) from RSS Link
-CleanDisc_df['Site'] = [re.findall(r'://([\w\-\.]+)',x)[0] if len(x) > 2 and x != 'No Link' else x for x in Post_df['link'].tolist()]
+CleanDisc_df['Site'] = [re.findall(r'://([\w\-\.]+)',x)[0] if len(x) > 7 and x != 'No Link' else x for x in Post_df['link'].tolist()]
 
-# In[]
+
 """ Keywords that are driving the news may be of interest.  In the below experiment,
 we split aggregate summary & title text into tokens, exclude english stopwords, then
 find the count of each token for the day.  We then map these counts to tokens for each post.
@@ -199,7 +259,6 @@ CleanDisc_Final = CleanDisc_df[['Token_Score_Aged','Age', 'Date', 'Site', 'Autho
 CleanDisc_Final = CleanDisc_Final.sort_values(by = ['Date', 'Token_Score_Aged'], ascending = [False, False], na_position = 'last')
 CleanDisc_Final = CleanDisc_Final.reset_index(drop=True)
 
-# In[]
 
 """ In the below experiment, we impliment a LDA model to find clusters of
 words that relate to a topic in the RSS feed"""
@@ -245,7 +304,7 @@ papers['paper_text'] = CleanDisc_Final['Title'] + ".  " + CleanDisc_Final['Post 
 
 papers['paper_text_processed'] =[cleanhtml(str(post)) for post in papers['paper_text']]
 
-#papers['paper_text_processed'] = papers['paper_text_processed'].map(lambda x: re.sub('[,\.!?]', '', x))
+#papers['paper_text_processed'] = papers['paper_text_processed'].map(lambda x: re.sub('[,\.!?]', ' ', x))
 # Convert the titles to lowercase
 papers['paper_text_processed'] = papers['paper_text_processed'].map(lambda x: x.lower())
 
@@ -292,6 +351,7 @@ data_words_trigrams = make_trigrams(data_words)
 data_lemmatized = lemmatization(data_words_trigrams, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'])
 data_words = data_lemmatized
 
+papers['Tokens'] = data_words
 
 # Create Dictionary
 id2word = corpora.Dictionary(data_words)
@@ -308,6 +368,9 @@ dictionary.filter_extremes(no_below=5, no_above=0.5)
 # Bag-of-words representation of the documents.
 corpus = [dictionary.doc2bow(doc) for doc in texts]
 
+# In[]
+papers['corpus'] = corpus
+# In[]
 # Make an index to word dictionary.
 temp = dictionary[0]  # This is only to "load" the dictionary.
 id2word = dictionary.id2token
@@ -315,18 +378,21 @@ id2word = dictionary.id2token
 print('Number of unique tokens: %d' % len(dictionary))
 print('Number of documents: %d' % len(corpus))
 print('Preprocessing for LDA model Complete')
+
+
 # In[]
 print('LDA Model is learning word clusters...')
+
 """ In the following experiment, we impliment a Latient Dirichlet Allocation
 model to estimate the distribution of contributions of words withiin an RSS
 Post to a set number of topics.  In the way, words that are not strictly
 applicable to specific topics """
 # Train LDA model.
 # Set training parameters.
-num_topics = 25
-chunksize = 10000
-passes = 50
-iterations = 400
+num_topics = 30
+chunksize = 11000
+passes = 64
+iterations = 500
 eval_every = None  # Don't evaluate model perplexity, takes too much time.
 #eval_every = 5
 
@@ -416,7 +482,7 @@ Topic_Matrix = np.transpose(Topic_Matrix)
 
 
 # Create Visual Report
-vis = pyLDAvis.gensim_models.prepare(model, corpus, dictionary)
+vis = pyLDAvis.gensim_models.prepare(model, corpus, dictionary, R=50)
 pyLDAvis.save_html(vis, 'Topic_Model.html')
 
 # In[]
@@ -444,26 +510,35 @@ print("Post data processed.")
 # In[]
 
 train_vecs = []
+train_ids = []
 for i in range(len(corpus)):
-    top_topics = (
+    topics = (
         model.get_document_topics(corpus[i],
                                       minimum_probability=0.0)
     )
-    topic_vec = [top_topics[i][1] for i in range(num_topics)]
+    topic_vec = [topics[i][1] for i in range(num_topics)]
+    topic_vec_ids = [topics[i][0] for i in range(num_topics)]
     train_vecs.append(topic_vec)
-    
-split_df = pd.DataFrame(train_vecs, columns=['Topic '+str(x+1) for x in range(num_topics)])
+    train_ids.append(topic_vec_ids)
+
+
+Topic_List = ['Topic '+str(vis[6][x]) for x in range(num_topics)]
+
+
+
+split_df = pd.DataFrame(train_vecs, columns=Topic_List)
 CleanDisc_Final = pd.concat([CleanDisc_Final, split_df], axis=1)
 
 CleanDisc_Final['Token_Score_Aged'].plot.kde()
 
 # In[]
-CleanDisc_Final['Topic'] = CleanDisc_Final[['Topic '+str(x+1) for x in range(num_topics)]].idxmax(axis=1)
+CleanDisc_Final['Topic'] = CleanDisc_Final[Topic_List].idxmax(axis=1)
+CleanDisc_Final['Topic_Score'] = CleanDisc_Final[Topic_List].max(axis=1)
 
 CleanDisc_Final.to_excel('Post_Analytics.xlsx')
 
 # In[]
-Record = CleanDisc_Final.iloc[1]
+Record = CleanDisc_Final.iloc[4]
 
 Rec_Title = Record.Title
 Rec_Post_Text = Record['Post Text']
@@ -477,11 +552,13 @@ Rec_Text_Tokes_Clean_Trigram = lemmatization(Rec_Text_Tokes_Clean_Trigram)
 Rec_Doc_Map = dictionary.doc2bow(Rec_Text_Tokes_Clean_Trigram[0])
 Rec_Top_Topics = model.get_document_topics(Rec_Doc_Map, minimum_probability=0.0)
 Rec_Topic_Vec = [Rec_Top_Topics[i][1] for i in range(num_topics)]
-Rec_Topic_Probs = pd.DataFrame(Rec_Topic_Vec, index=['Topic '+str(x+1) for x in range(num_topics)])
+Rec_Topic_Probs = pd.DataFrame(Rec_Topic_Vec, index=Topic_List)
 Rec_Topic = Rec_Topic_Probs.idxmax(axis=0)[0]
 Rec_New_df = Rec_Topic_Probs.T
 Rec_New_df['Topic'] = Rec_Topic
 Rec_New_df['Tokens'] = Rec_Text_Tokes_Clean_Trigram
 Token_vals = list([dictionary.get(x[0]) for x in Rec_Doc_Map])
 Rec_New_df['Tokens_Values']  = [Token_vals]
-# In[]
+Selected = CleanDisc_Final[CleanDisc_Final.Topic == Rec_Topic]
+#Selected = Post_df[Post_df['summary'].str.contains('figure class')]
+#Selected = CleanDisc_Final[CleanDisc_Final['Post Text'].str.contains('wwe')]
