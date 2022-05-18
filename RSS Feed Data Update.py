@@ -101,6 +101,13 @@ Post_df = Post_df.sort_values('published', ascending=False).reset_index(drop=Tru
 # Drop Duplicates
 Post_df = Post_df.drop_duplicates(subset=['published','title', 'link'], keep='first').copy()
 
+# Delete RSS.app notice that trial expired.
+Post_df = Post_df[~Post_df['summary'].str.contains('Your trial has expired.')]
+
+# Delete trailing text
+Search_String = 'Use of this feed is for personal non-commercial use only. '
+Post_df['summary'] = [str(doc).split(Search_String)[0] for doc in Post_df['summary'].tolist()]
+
 # Write to excel File
 print('Saving to Excel file...')
 Post_df.to_excel('Post_History.xlsx', index=False)
