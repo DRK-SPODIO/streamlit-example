@@ -344,6 +344,8 @@ Post_df_Sorted = Post_df.sort_values('Rel_Age_Score',ascending=False).reset_inde
 
 # In[]
 Post_df_Sorted.to_excel('Doc2Vec Results.xlsx')
+# TODO Get Topic Words
+#Topics = 
 
 # In[]
 from sklearn.metrics import pairwise_distances

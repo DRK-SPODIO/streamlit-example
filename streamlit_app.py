@@ -13,6 +13,32 @@ st.set_page_config(layout="wide")
 Post_df = pd.read_excel('Post_History.xlsx')
 Post_df = Post_df[~Post_df['summary'].isin(['No Summary'])]
 Post_df = Post_df.sort_values('published',ascending=False)
+
+
+
+# In[]
+# Set Widescreen format
+
+# Header & Description
+"""
+# SPODIO RSS Feed Monitor
+Tracks and aggregates Sports RSS Feeds.
+
+TODO:
+Add analytics to determine which posts are most relivent/timely
+
+Note: Links in Summaries may not work (sometime RSS feeds mess them up)
+    
+"""
+# Post Count Widget
+Post_Count = str(len(Post_df))+' Posts'
+Age = pd.DataFrame()
+Age['Age'] = [datetime.utcnow() - x for x in Post_df['published'].tolist()] # Calculate Post age
+Age = Age['Age'] / np.timedelta64(1, 'h')  # Convert to hours
+Age = Age.iloc[[x < 24 for x in Age]]
+New_Posts = str(len(Age))+' Posts in last 24 hours'
+st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
+
 Display_df = Post_df.head(100).copy()
 
 styles = [
@@ -63,43 +89,26 @@ Display_df['summary'] = Display_df['summary'].str.replace('<p>The post <a href="
 
 Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
+"""# 100 Most recent RSS posts """
+components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
 
-# In[]
-# Set Widescreen format
-
-# Header & Description
-"""
-# SPODIO RSS Feed Monitor
-Tracks and aggregates Sports RSS Feeds.
-
-TODO:
-Add analytics to determine which posts are most relivent/timely
-
-Note: Links in Summaries may not work (sometime RSS feeds mess them up)
-    
-"""
-# Post Count Widget
-Post_Count = str(len(Post_df))+' Posts'
-Age = pd.DataFrame()
-Age['Age'] = [datetime.utcnow() - x for x in Post_df['published'].tolist()] # Calculate Post age
-Age = Age['Age'] / np.timedelta64(1, 'h')  # Convert to hours
-Age = Age.iloc[[x < 24 for x in Age]]
-New_Posts = str(len(Age))+' Posts in last 24 hours'
-st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 
 # In[]
 
-
+# Test to put Topic Model HTML into StreamLit App (not working)
 #components.iframe("/Topic_Model.html", width=2400, height=800)
 
-"""# Most recent 100 RSS posts"""
-components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
+"""
+# SPODIO RSS Feed Analytics
+    
+# Most Relivent 100 RSS posts (LDA Model V2.0)
+TODO: Add topic selection (currently most recent relivent posts to all topics)
+"""
 
 Rel_df = pd.read_excel('Post_Analytics.xlsx')
 Rel_df = Rel_df[~Rel_df['Post Text'].isin(['No Summary'])]
 Rel_df = Rel_df[['Token_Score_Aged','Date','Site', 'Link', 'Title', 'Post Text']]
 Rel_df = Rel_df.sort_values(by='Token_Score_Aged', ascending=False).reset_index(drop=True)
-
 
 Display_Rel_df = Rel_df.head(100).copy()
 Display_Rel_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_Rel_df['Link'].tolist()]
@@ -107,13 +116,32 @@ Display_Rel_df = Display_Rel_df.reset_index(drop=True)
 
 Table_Rel_Styler = Display_Rel_df.style.set_table_styles(styles).hide_index()
 
+components.html(Table_Rel_Styler.to_html(),width=2400, height=1000, scrolling=True)
+
+# In[]
+
+
 """
 # SPODIO RSS Feed Analytics
     
-# Most Relivent 100 RSS posts
+# Most Relivent 25 RSS posts from Top Selector (Top2Vec Model V3.0)
 TODO: Add topic selection (currently most recent relivent posts to all topics)
 """
+Topic_Selector = st.slider('Topic Group Selection [PLACEHOLDER]', min_value=1, max_value=150, value=2, step=1, help='Select a Topic Group', on_change=None)
 
-Topic_Selector = st.slider('Topic Group Selection [PLACEHOLDER]', min_value=1, max_value=20, value=1, step=1, help='Select a Topic Group', on_change=None)
 
-components.html(Table_Rel_Styler.to_html(),width=2400, height=1000, scrolling=True)
+DNN_Model_df = pd.read_excel('Doc2Vec Results.xlsx')
+DNN_Model_df = DNN_Model_df[DNN_Model_df.Topic == 'Topic '+str(Topic_Selector)]
+DNN_Model_df = DNN_Model_df.sort_values(by='Rel_Age_Score',axis=0, ascending=False).reset_index(drop=True)
+
+# Get top 25 Posts
+DNN_Model_df = DNN_Model_df.head(25)
+# Format Links
+DNN_Model_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  DNN_Model_df['link'].tolist()]
+
+# Format Table
+DNN_Model_df = DNN_Model_df[['published', 'author', 'Link', 'title', 'summary']]
+Table_DNN_Styler = DNN_Model_df.style.set_table_styles(styles).hide_index()
+
+# Display Table
+components.html(Table_DNN_Styler.to_html(),width=2400, height=1000, scrolling=True)
