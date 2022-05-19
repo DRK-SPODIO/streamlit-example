@@ -301,7 +301,13 @@ those topics"""
 
 from top2vec import Top2Vec
 
-model = Top2Vec(papers['paper_text_processed'].tolist())
+Train_Model = True
+if Train_Model:
+    model = Top2Vec(papers['paper_text_processed'].tolist())
+    FormattedDate = datetime.now().strftime("%y%m%d%H%M")
+    model.save(FormattedDate + "_Top2VecModel.mod")
+else:
+    model = Top2Vec.load('2205191351_Top2VecModel.mod')
 
 # In[]
 
@@ -320,7 +326,7 @@ for doc, score, doc_id in zip(documents, document_scores, document_ids):
 
 Post_df['Topic'] = ['Topic '+str(x+1) for x in model.doc_top]
 Post_df['Topic_Score'] = model.doc_dist
-
+Post_df['Keywords'] = model.documents
 
 # Calculate Age of Posts (in hours)
 Post_df['Age'] = [datetime.utcnow() - x for x in Post_df['published'].tolist()] #  Calculate Post age
@@ -337,6 +343,55 @@ Post_df['Rel_Age_Score'] = Post_df['Age'] * Post_df['Topic_Score']
 Post_df_Sorted = Post_df.sort_values('Rel_Age_Score',ascending=False).reset_index(drop=True)
 
 # In[]
-Post_df_Sorted.to_excel('Doc2Vec Results.xlsx') 
+Post_df_Sorted.to_excel('Doc2Vec Results.xlsx')
 
-    
+# In[]
+from sklearn.metrics import pairwise_distances
+import seaborn as sns
+import matplotlib.pyplot as plt
+import hdbscan
+import umap
+
+# Draw Word Clouds
+Topic_Ct = 10
+topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords=["NBA", "Golden", "State", "Warriors"], num_topics=Topic_Ct)
+for topic in topic_nums:
+    model.generate_topic_wordcloud(topic)
+    plt.show()
+
+
+# Draw 2D Cluster Map
+vectors = model._get_document_vectors()
+
+Neighbor_min = min(model.topic_sizes)
+Topic_count = len(model.topic_sizes)
+
+umap_args = {'n_neighbors': Neighbor_min,
+             'n_components': 3,
+             'metric': 'cosine'}
+
+umap_model = umap.UMAP(**umap_args).fit(vectors)
+
+hdbscan_args = {'min_cluster_size': Neighbor_min,
+                'metric': 'euclidean'} 
+
+clusterer = hdbscan.HDBSCAN(**hdbscan_args).fit(umap_model.embedding_)
+
+# Different colors for all topics
+# color_palette = sns.color_palette("ch:start=.2,rot=-.3", Topic_count)
+# cluster_colors = [color_palette[x] if x >= 0
+#                   else (0.5, 0.5, 0.5)
+#                   for x in clusterer.labels_]
+
+# Topics colored for Search Keywords
+color_palette = sns.color_palette("dark", Topic_Ct)
+cluster_colors = [color_palette[np.where(topic_nums == x)[0][0]] if x in topic_nums
+                  else (0.5, 0.5, 0.5)
+                  for x in clusterer.labels_]
+
+cluster_member_colors = [sns.desaturate(x, p) for x, p in
+                         zip(cluster_colors, clusterer.probabilities_)]
+
+X = [x[0] for x in umap_model.embedding_]
+Y = [x[1] for x in umap_model.embedding_]
+plt.scatter(X ,Y, s=50, linewidth=0, c=cluster_member_colors, alpha=0.25)
