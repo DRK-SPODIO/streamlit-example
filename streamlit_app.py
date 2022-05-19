@@ -98,25 +98,25 @@ components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
 # Test to put Topic Model HTML into StreamLit App (not working)
 #components.iframe("/Topic_Model.html", width=2400, height=800)
 
-"""
-# SPODIO RSS Feed Analytics
+# """
+# # SPODIO RSS Feed Analytics
     
-# Most Relivent 100 RSS posts (LDA Model V2.0)
-TODO: Add topic selection (currently most recent relivent posts to all topics)
-"""
+# # Most Relivent 100 RSS posts (LDA Model V2.0)
+# TODO: Add topic selection (currently most recent relivent posts to all topics)
+# """
 
-Rel_df = pd.read_excel('Post_Analytics.xlsx')
-Rel_df = Rel_df[~Rel_df['Post Text'].isin(['No Summary'])]
-Rel_df = Rel_df[['Token_Score_Aged','Date','Site', 'Link', 'Title', 'Post Text']]
-Rel_df = Rel_df.sort_values(by='Token_Score_Aged', ascending=False).reset_index(drop=True)
+# Rel_df = pd.read_excel('Post_Analytics.xlsx')
+# Rel_df = Rel_df[~Rel_df['Post Text'].isin(['No Summary'])]
+# Rel_df = Rel_df[['Token_Score_Aged','Date','Site', 'Link', 'Title', 'Post Text']]
+# Rel_df = Rel_df.sort_values(by='Token_Score_Aged', ascending=False).reset_index(drop=True)
 
-Display_Rel_df = Rel_df.head(100).copy()
-Display_Rel_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_Rel_df['Link'].tolist()]
-Display_Rel_df = Display_Rel_df.reset_index(drop=True)
+# Display_Rel_df = Rel_df.head(100).copy()
+# Display_Rel_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_Rel_df['Link'].tolist()]
+# Display_Rel_df = Display_Rel_df.reset_index(drop=True)
 
-Table_Rel_Styler = Display_Rel_df.style.set_table_styles(styles).hide_index()
+# Table_Rel_Styler = Display_Rel_df.style.set_table_styles(styles).hide_index()
 
-components.html(Table_Rel_Styler.to_html(),width=2400, height=1000, scrolling=True)
+# components.html(Table_Rel_Styler.to_html(),width=2400, height=1000, scrolling=True)
 
 # In[]
 
@@ -127,7 +127,7 @@ components.html(Table_Rel_Styler.to_html(),width=2400, height=1000, scrolling=Tr
 # Most Relivent 25 RSS posts from Top Selector (Top2Vec Model V3.0)
 TODO: Add topic selection (currently most recent relivent posts to all topics)
 """
-Topic_Selector = st.slider('Topic Group Selection [PLACEHOLDER]', min_value=1, max_value=150, value=2, step=1, help='Select a Topic Group', on_change=None)
+Topic_Selector = st.slider('Topic Selection (lower Topic number indicates more posts in Topic)', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=None)
 
 
 DNN_Model_df = pd.read_excel('Doc2Vec Results.xlsx')
