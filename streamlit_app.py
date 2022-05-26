@@ -89,8 +89,8 @@ Display_df['summary'] = Display_df['summary'].str.replace('<p>The post <a href="
 
 Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
-"""# 100 Most recent RSS posts """
-components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
+# """# 100 Most recent RSS posts """
+# components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
 
 
 # In[]
