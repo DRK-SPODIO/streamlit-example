@@ -19,6 +19,9 @@ Post_df = Post_df.sort_values('published',ascending=False)
 # In[]
 # Set Widescreen format
 
+def Comma_Format(number):
+    return str(("{:,}".format(number)))
+
 # Header & Description
 """
 # SPODIO RSS Feed Monitor
@@ -26,12 +29,12 @@ Tracks and aggregates Sports RSS Feeds.
     
 """
 # Post Count Widget
-Post_Count = str(len(Post_df))+' Posts'
+Post_Count = Comma_Format(len(Post_df))+' Posts'
 Age = pd.DataFrame()
 Age['Age'] = [datetime.utcnow() - x for x in Post_df['published'].tolist()] # Calculate Post age
 Age = Age['Age'] / np.timedelta64(1, 'h')  # Convert to hours
 Age = Age.iloc[[x < 24 for x in Age]]
-New_Posts = str(len(Age))+' Posts in last 24 hours'
+New_Posts = Comma_Format(len(Age))+' Posts in last 24 hours'
 st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 
 Display_df = Post_df.head(100).copy()
