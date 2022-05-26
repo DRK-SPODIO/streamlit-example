@@ -312,15 +312,15 @@ else:
 # In[]
 
 # Print Tops closest to Keyword Search;
-Keywords = ["NFL", "Draft", "QB"]
-documents, document_scores, document_ids = model.search_documents_by_keywords(keywords=Keywords, num_docs=10)
-for doc, score, doc_id in zip(documents, document_scores, document_ids):
-    print(f"Document: {doc_id}, Score: {score}")
-    print("-----------")
-    print(cleanhtml(papers['title'].tolist()[doc_id]))
-    print(cleanhtml(papers['summary'].tolist()[doc_id]))
-    print("-----------")
-    print()
+# Keywords = ["NFL", "Draft", "QB"]
+# documents, document_scores, document_ids = model.search_documents_by_keywords(keywords=Keywords, num_docs=10)
+# for doc, score, doc_id in zip(documents, document_scores, document_ids):
+#     print(f"Document: {doc_id}, Score: {score}")
+#     print("-----------")
+#     print(cleanhtml(papers['title'].tolist()[doc_id]))
+#     print(cleanhtml(papers['summary'].tolist()[doc_id]))
+#     print("-----------")
+#     print()
     
 # In[]
 
@@ -396,4 +396,4 @@ cluster_member_colors = [sns.desaturate(x, p) for x, p in
 
 X = [x[0] for x in umap_model.embedding_]
 Y = [x[1] for x in umap_model.embedding_]
-plt.scatter(X ,Y, s=50, linewidth=0, c=cluster_member_colors, alpha=0.25)
+plt.scatter(X ,Y, s=50, linewidth=0, c=cluster_member_colors, alpha=0.20)

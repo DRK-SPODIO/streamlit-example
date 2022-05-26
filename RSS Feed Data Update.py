@@ -104,13 +104,13 @@ Post_df = Post_df.drop_duplicates(subset=['published','title', 'link'], keep='fi
 # Delete RSS.app notice that trial expired.
 Post_df = Post_df[~Post_df['summary'].str.contains('Your trial has expired.')]
 
-# Delete trailing text
+# Delete trailing text from Sport Insider RSS Posts
 Search_String = 'Use of this feed is for personal non-commercial use only. '
 Post_df['summary'] = [str(doc).split(Search_String)[0] for doc in Post_df['summary'].tolist()]
 
 # Write to excel File
+print('New Posts:', len(Post_df)-len(Old_Posts_df))
 print('Saving to Excel file...')
 Post_df.to_excel('Post_History.xlsx', index=False)
 print('Data update Complete')
-
 
