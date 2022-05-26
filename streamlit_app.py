@@ -23,11 +23,6 @@ Post_df = Post_df.sort_values('published',ascending=False)
 """
 # SPODIO RSS Feed Monitor
 Tracks and aggregates Sports RSS Feeds.
-
-TODO:
-Add analytics to determine which posts are most relivent/timely
-
-Note: Links in Summaries may not work (sometime RSS feeds mess them up)
     
 """
 # Post Count Widget
@@ -122,12 +117,13 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 
 """
-# SPODIO RSS Feed Analytics
-    
-# Most Relivent 25 RSS posts from Top Selector (Top2Vec Model V3.0)
-TODO: Add topic selection (currently most recent relivent posts to all topics)
+# SPODIO RSS Feed Analytics: Most Relivent 25 RSS posts from Topic (Top2Vec Model V3.0)
+
+Topics are sorted by most written about, so Topic Numbers can change over time.
+
 """
-Topic_Selector = st.slider('Topic Selection (lower Topic number indicates more posts in Topic)', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=None)
+
+Topic_Selector = st.slider('Topic Selection', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=None)
 
 
 DNN_Model_df = pd.read_excel('Doc2Vec Results.xlsx')
