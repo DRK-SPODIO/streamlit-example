@@ -354,14 +354,6 @@ import matplotlib.pyplot as plt
 import hdbscan
 import umap
 
-# Draw Word Clouds
-Topic_Ct = 10
-topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords=["NBA", "Golden", "State", "Warriors"], num_topics=Topic_Ct)
-for topic in topic_nums:
-    model.generate_topic_wordcloud(topic)
-    plt.show()
-
-
 # Draw 2D Cluster Map
 vectors = model._get_document_vectors()
 
@@ -385,8 +377,21 @@ clusterer = hdbscan.HDBSCAN(**hdbscan_args).fit(umap_model.embedding_)
 #                   else (0.5, 0.5, 0.5)
 #                   for x in clusterer.labels_]
 
+# In[]
+SearchTerms = ['Golden','State','Warriors']
+#SearchTerms = ['Steve','Kerr']
+SearchTerms = ['Stephen','Curry']
+SearchTerms = ['NFL','Draft']
+SearchTerms = ['Manchester','Liverpool']
+# Draw Word Clouds
+Topic_Ct = 30
+topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords=SearchTerms, num_topics=Topic_Ct)
+# for topic in topic_nums:
+#     model.generate_topic_wordcloud(topic)
+#     plt.show()
+
 # Topics colored for Search Keywords
-color_palette = sns.color_palette("dark", Topic_Ct)
+color_palette = sns.color_palette("Reds", Topic_Ct)
 cluster_colors = [color_palette[np.where(topic_nums == x)[0][0]] if x in topic_nums
                   else (0.5, 0.5, 0.5)
                   for x in clusterer.labels_]
@@ -396,4 +401,13 @@ cluster_member_colors = [sns.desaturate(x, p) for x, p in
 
 X = [x[0] for x in umap_model.embedding_]
 Y = [x[1] for x in umap_model.embedding_]
+
 plt.scatter(X ,Y, s=50, linewidth=0, c=cluster_member_colors, alpha=0.20)
+plt.title(SearchTerms)
+plt.show()
+
+# In[]
+""" Develop a model to value words per day (using weight matrix and Day score 
+In the below experiment, we take as keyword-weights for each topic and multiply by recency
+to get a combined weight-recency metric to evaluate the value of words 
+"""
