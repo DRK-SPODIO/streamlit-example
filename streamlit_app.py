@@ -146,7 +146,6 @@ def Open_Data():
 
 
 Topic_Selector = st.slider('Topic Selection', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=Open_Data)
-Open_Data()
 
 
 
