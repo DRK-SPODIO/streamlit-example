@@ -126,9 +126,12 @@ Topics are sorted by most written about, so Topic Numbers can change over time.
 
 """
 
+@st.cache(suppress_st_warning=True)
+def Get_Data():
+    return pd.read_excel('Doc2Vec Results.xlsx')
 
 with st.spinner('Loading Data...'):
-    DNN_Model_df_Data = pd.read_excel('Doc2Vec Results.xlsx')
+    DNN_Model_df_Data = Get_Data()
 st.success('Data Loaded')
 
 def Sort_df():
