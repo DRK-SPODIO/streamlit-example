@@ -126,21 +126,28 @@ Topics are sorted by most written about, so Topic Numbers can change over time.
 
 """
 
-Topic_Selector = st.slider('Topic Selection', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=None)
+DNN_Model_df_Data = pd.read_excel('Doc2Vec Results.xlsx')
+
+def Open_Data():
+    with st.spinner('Wait for it...'):
+        DNN_Model_df = DNN_Model_df_Data[DNN_Model_df_Data.Topic == 'Topic '+str(Topic_Selector)]
+        DNN_Model_df = DNN_Model_df.sort_values(by='Rel_Age_Score',axis=0, ascending=False).reset_index(drop=True)
+        # Get top 25 Posts
+        DNN_Model_df = DNN_Model_df.head(25)
+        # Format Links
+        DNN_Model_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  DNN_Model_df['link'].tolist()]
+        # Format Table
+        DNN_Model_df = DNN_Model_df[['published', 'author', 'Link', 'title', 'summary']]
+        Table_DNN_Styler = DNN_Model_df.style.set_table_styles(styles).hide_index()    
+        # Display Table
+        components.html(Table_DNN_Styler.to_html(),width=2400, height=1000, scrolling=True)
+
+    st.success('Done!')
 
 
-DNN_Model_df = pd.read_excel('Doc2Vec Results.xlsx')
-DNN_Model_df = DNN_Model_df[DNN_Model_df.Topic == 'Topic '+str(Topic_Selector)]
-DNN_Model_df = DNN_Model_df.sort_values(by='Rel_Age_Score',axis=0, ascending=False).reset_index(drop=True)
+Topic_Selector = st.slider('Topic Selection', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=Open_Data)
+Open_Data()
 
-# Get top 25 Posts
-DNN_Model_df = DNN_Model_df.head(25)
-# Format Links
-DNN_Model_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  DNN_Model_df['link'].tolist()]
 
-# Format Table
-DNN_Model_df = DNN_Model_df[['published', 'author', 'Link', 'title', 'summary']]
-Table_DNN_Styler = DNN_Model_df.style.set_table_styles(styles).hide_index()
 
-# Display Table
-components.html(Table_DNN_Styler.to_html(),width=2400, height=1000, scrolling=True)
+
