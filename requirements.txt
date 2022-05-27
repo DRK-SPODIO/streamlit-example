@@ -2,3 +2,4 @@ altair
 pandas
 streamlit
 openpyxl
+top2vec
