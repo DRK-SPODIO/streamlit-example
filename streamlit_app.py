@@ -131,20 +131,23 @@ with st.spinner('Loading Data...'):
     DNN_Model_df_Data = pd.read_excel('Doc2Vec Results.xlsx')
 st.success('Data Loaded')
 
+def Sort_df():
+    DNN_Model_df = DNN_Model_df_Data[DNN_Model_df_Data.Topic == 'Topic '+str(Topic_Selector)]
+    DNN_Model_df = DNN_Model_df.sort_values(by='Rel_Age_Score',axis=0, ascending=False).reset_index(drop=True)
+    # Get top 25 Posts
+    DNN_Model_df = DNN_Model_df.head(25)
+    # Format Links
+    DNN_Model_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  DNN_Model_df['link'].tolist()]
+    # Format Table
+    DNN_Model_df = DNN_Model_df[['published', 'author', 'Link', 'title', 'summary']]
+    Table_DNN_Styler = DNN_Model_df.style.set_table_styles(styles).hide_index()    
+    # Display Table
+    return Table_DNN_Styler
 
-Topic_Selector = st.slider('Topic Selection', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=None)
 
-DNN_Model_df = DNN_Model_df_Data[DNN_Model_df_Data.Topic == 'Topic '+str(Topic_Selector)]
-DNN_Model_df = DNN_Model_df.sort_values(by='Rel_Age_Score',axis=0, ascending=False).reset_index(drop=True)
-# Get top 25 Posts
-DNN_Model_df = DNN_Model_df.head(25)
-# Format Links
-DNN_Model_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  DNN_Model_df['link'].tolist()]
-# Format Table
-DNN_Model_df = DNN_Model_df[['published', 'author', 'Link', 'title', 'summary']]
-Table_DNN_Styler = DNN_Model_df.style.set_table_styles(styles).hide_index()    
-# Display Table
-components.html(Table_DNN_Styler.to_html(),width=2400, height=1000, scrolling=True)
+Topic_Selector = st.slider('Topic Selection', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=Sort_df)
+
+components.html(Sort_df().to_html(),width=2400, height=1000, scrolling=True)
 
 
 
