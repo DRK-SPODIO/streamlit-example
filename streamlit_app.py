@@ -144,7 +144,7 @@ def Sort_df():
     # Get top 25 Posts
     DNN_Model_df = DNN_Model_df.head(25)
     # Format Links
-    DNN_Model_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  DNN_Model_df['link'].tolist()]
+    DNN_Model_df['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if x != "No Link" and not pd.isna(x) else 'No Link' for x in DNN_Model_df['link'].tolist()]
     # Format Table
     DNN_Model_df = DNN_Model_df[['published', 'author', 'Link', 'title', 'summary']]
     Table_DNN_Styler = DNN_Model_df.style.set_table_styles(styles).hide_index()    
