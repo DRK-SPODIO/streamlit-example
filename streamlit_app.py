@@ -114,7 +114,7 @@ st.markdown(hide_table_row_index, unsafe_allow_html=True)
 
 
 
-@st.cache(suppress_st_warning=True)
+st.cache(suppress_st_warning=True)
 def Get_Data():
     return pd.read_excel('Doc2Vec Results.xlsx')
 
@@ -154,7 +154,37 @@ def Sort_df():
 
 Topic_Selector = st.slider('Topic Selection', min_value=1, max_value=150, value=1, step=1, help='Select a Topic Group', on_change=Sort_df)
 
-components.html(Sort_df().to_html(),width=2400, height=1000, scrolling=True)
+components.html(Sort_df().to_html(),width=1400, height=1000, scrolling=True)
 
+"""
+Experimental Smart Search
+"""
+from top2vec import Top2Vec
+model = Top2Vec.load('2205270814_Top2VecModel.mod')
+Search_Words = st.text_input('Search Terms','Max Verstappen')
+Search_Words = Search_Words.split()
+documents, document_scores, document_ids = model.search_documents_by_keywords(keywords=Search_Words, num_docs=20)
+Search_Results = DNN_Model_df_Data[DNN_Model_df_Data.doc_id.isin(document_ids)].copy()
+
+# Format Links
+Search_Results['Link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if x != "No Link" and not pd.isna(x) else 'No Link' for x in Search_Results['link'].tolist()]
+# Format Table
+Sort_by = 'published'
+Search_Results = Search_Results.sort_values(by=Sort_by,axis=0, ascending=False).reset_index(drop=True)
+Search_Results = Search_Results[['published', 'author', 'Link', 'title', 'summary']]
+Table_Search_Results = Search_Results.style.set_table_styles(styles).hide_index().to_html()
+
+components.html(Table_Search_Results,width=1400, height=1000, scrolling=True)
+
+# Print Tops closest to Keyword Search;
+# Keywords = ["NFL", "Draft", "QB"]
+# documents, document_scores, document_ids = model.search_documents_by_keywords(keywords=Keywords, num_docs=10)
+# for doc, score, doc_id in zip(documents, document_scores, document_ids):
+#     print(f"Document: {doc_id}, Score: {score}")
+#     print("-----------")
+#     print(cleanhtml(papers['title'].tolist()[doc_id]))
+#     print(cleanhtml(papers['summary'].tolist()[doc_id]))
+#     print("-----------")
+#     print()
 
 

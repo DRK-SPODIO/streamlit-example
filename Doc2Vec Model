@@ -340,10 +340,13 @@ Post_df['Age'] = [1 - st.norm.cdf(x) for x in Post_df['Age'].tolist()]
 
 Post_df['Rel_Age_Score'] = Post_df['Age'] * Post_df['Topic_Score']
 
-Post_df_Sorted = Post_df.sort_values('Rel_Age_Score',ascending=False).reset_index(drop=True)
+Post_df_Sorted = Post_df.sort_values('Rel_Age_Score',ascending=False).reset_index()
+
+Post_df_Sorted['doc_id'] = Post_df_Sorted['index']
+Post_df_Sorted = Post_df_Sorted.drop('index', axis=1)
 
 # In[]
-Post_df_Sorted.to_excel('Doc2Vec Results.xlsx')
+Post_df_Sorted.to_excel('Doc2Vec Results.xlsx',index=False)
 # TODO Get Topic Words
 #Topics = 
 
@@ -362,7 +365,8 @@ Topic_count = len(model.topic_sizes)
 
 umap_args = {'n_neighbors': Neighbor_min,
              'n_components': 3,
-             'metric': 'cosine'}
+             'metric': 'cosine',
+             'verbose': True}
 
 umap_model = umap.UMAP(**umap_args).fit(vectors)
 
@@ -383,15 +387,17 @@ SearchTerms = ['Golden','State','Warriors']
 SearchTerms = ['Stephen','Curry']
 SearchTerms = ['NFL','Draft']
 SearchTerms = ['Manchester','Liverpool']
+SearchTerms = ['Football']
+SearchTerms = ['premier']
 # Draw Word Clouds
-Topic_Ct = 30
+Topic_Ct = 91
 topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords=SearchTerms, num_topics=Topic_Ct)
 # for topic in topic_nums:
 #     model.generate_topic_wordcloud(topic)
 #     plt.show()
 
 # Topics colored for Search Keywords
-color_palette = sns.color_palette("Reds", Topic_Ct)
+color_palette = sns.color_palette("Reds", len(topic_nums))
 cluster_colors = [color_palette[np.where(topic_nums == x)[0][0]] if x in topic_nums
                   else (0.5, 0.5, 0.5)
                   for x in clusterer.labels_]
@@ -411,3 +417,4 @@ plt.show()
 In the below experiment, we take as keyword-weights for each topic and multiply by recency
 to get a combined weight-recency metric to evaluate the value of words 
 """
+
