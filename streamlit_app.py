@@ -7,12 +7,12 @@ import streamlit as st
 import streamlit.components.v1 as components
 from datetime import datetime
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide") # Set page to wide view
 
 # In[]
-Post_df = pd.read_excel('Post_History.xlsx')
-Post_df = Post_df[~Post_df['summary'].isin(['No Summary'])]
-Post_df = Post_df.sort_values('published',ascending=False)
+# Post_df = pd.read_excel('Post_History.xlsx')
+# Post_df = Post_df[~Post_df['summary'].isin(['No Summary'])]
+# Post_df = Post_df.sort_values('published',ascending=False)
 
 
 
@@ -28,16 +28,9 @@ def Comma_Format(number):
 Tracks and aggregates Sports RSS Feeds.
     
 """
-# Post Count Widget
-Post_Count = Comma_Format(len(Post_df))+' Posts'
-Age = pd.DataFrame()
-Age['Age'] = [datetime.utcnow() - x for x in Post_df['published'].tolist()] # Calculate Post age
-Age = Age['Age'] / np.timedelta64(1, 'h')  # Convert to hours
-Age = Age.iloc[[x < 24 for x in Age]]
-New_Posts = Comma_Format(len(Age))+' Posts in last 24 hours'
-st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 
-Display_df = Post_df.head(100).copy()
+
+# Display_df = Post_df.head(100).copy()
 
 styles = [
     dict(selector="tr:hover",
@@ -76,16 +69,16 @@ hide_table_row_index = """
 
 # Inject CSS with Markdown
 st.markdown(hide_table_row_index, unsafe_allow_html=True)
-#st.set_page_config(layout='wide')  # Set page to wide view
+ 
 
-Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_df['link'].tolist()]
-Display_df['summary'] = Display_df['summary'].fillna('No Summary')
-Display_df = Display_df.reset_index(drop=True)
+# Display_df['link'] = ['<a href="'+ str(x) +'" target = "_blank">Link to Post</a>' if not pd.isna(x) else 'No Link' for x in  Display_df['link'].tolist()]
+# Display_df['summary'] = Display_df['summary'].fillna('No Summary')
+# Display_df = Display_df.reset_index(drop=True)
 
 # Clean up posts that include non-working links
-Display_df['summary'] = Display_df['summary'].str.replace('<p>The post <a href="https://www.sportsnet.ca/feed/" rel="nofollow">Why Stripling fits perfectly into Blue Jays&#8217; six-man pitching rotation</a> appeared first on <a href="https://www.sportsnet.ca" rel="nofollow">Sportsnet.ca</a>.</p>','',regex=False)
+# Display_df['summary'] = Display_df['summary'].str.replace('<p>The post <a href="https://www.sportsnet.ca/feed/" rel="nofollow">Why Stripling fits perfectly into Blue Jays&#8217; six-man pitching rotation</a> appeared first on <a href="https://www.sportsnet.ca" rel="nofollow">Sportsnet.ca</a>.</p>','',regex=False)
 
-Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
+# Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 
 # """# 100 Most recent RSS posts """
 # components.html(Table_Styler.to_html(),width=2400, height=1000, scrolling=True)
@@ -119,6 +112,12 @@ Table_Styler = Display_df.style.set_table_styles(styles).hide_index()
 # In[]
 
 
+
+
+@st.cache(suppress_st_warning=True)
+def Get_Data():
+    return pd.read_excel('Doc2Vec Results.xlsx')
+
 """
 # SPODIO RSS Feed Analytics: Most Relivent 25 RSS posts from Topic (Top2Vec Model V3.0)
 
@@ -126,13 +125,18 @@ Topics are sorted by most written about, so Topic Numbers can change over time.
 
 """
 
-@st.cache(suppress_st_warning=True)
-def Get_Data():
-    return pd.read_excel('Doc2Vec Results.xlsx')
-
 with st.spinner('Loading Data...'):
     DNN_Model_df_Data = Get_Data()
 st.success('Data Loaded')
+
+# Post Count Widget
+Post_Count = Comma_Format(len(DNN_Model_df_Data))+' Posts'
+Age = pd.DataFrame()
+Age['Age'] = [datetime.utcnow() - x for x in DNN_Model_df_Data['published'].tolist()] # Calculate Post age
+Age = Age['Age'] / np.timedelta64(1, 'h')  # Convert to hours
+Age = Age.iloc[[x < 24 for x in Age]]
+New_Posts = Comma_Format(len(Age))+' Posts in last 24 hours'
+st.metric(label="Number of Posts", value=Post_Count, delta=New_Posts)
 
 def Sort_df():
     DNN_Model_df = DNN_Model_df_Data[DNN_Model_df_Data.Topic == 'Topic '+str(Topic_Selector)]
