@@ -347,8 +347,16 @@ Post_df_Sorted = Post_df_Sorted.drop('index', axis=1)
 
 # In[]
 Post_df_Sorted.to_excel('Doc2Vec Results.xlsx',index=False)
-# TODO Get Topic Words
-#Topics = 
+
+# In[]
+""" Develop a model to value words per day (using weight matrix and Day score 
+In the below experiment, we take as keyword-weights for each topic and multiply by recency
+to get a combined weight-recency metric to evaluate the value of words 
+"""
+
+Topic_Words = model.topic_words
+Topic_Weights = model.topic_word_scores
+
 
 # In[]
 from sklearn.metrics import pairwise_distances
@@ -382,14 +390,17 @@ clusterer = hdbscan.HDBSCAN(**hdbscan_args).fit(umap_model.embedding_)
 #                   for x in clusterer.labels_]
 
 # In[]
+
+# Draw Post Search Clouds that indicate clusters
 SearchTerms = ['Golden','State','Warriors']
 #SearchTerms = ['Steve','Kerr']
 SearchTerms = ['Stephen','Curry']
 SearchTerms = ['NFL','Draft']
-SearchTerms = ['Manchester','Liverpool']
+
 SearchTerms = ['Football']
 SearchTerms = ['premier']
-# Draw Word Clouds
+#SearchTerms = ['Manchester','Liverpool']
+# Draw Post Clouds
 Topic_Ct = 91
 topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords=SearchTerms, num_topics=Topic_Ct)
 # for topic in topic_nums:
@@ -413,8 +424,4 @@ plt.title(SearchTerms)
 plt.show()
 
 # In[]
-""" Develop a model to value words per day (using weight matrix and Day score 
-In the below experiment, we take as keyword-weights for each topic and multiply by recency
-to get a combined weight-recency metric to evaluate the value of words 
-"""
 
