@@ -349,13 +349,14 @@ Post_df_Sorted = Post_df_Sorted.drop('index', axis=1)
 Post_df_Sorted.to_excel('Doc2Vec Results.xlsx',index=False)
 
 # In[]
-""" Develop a model to value words per day (using weight matrix and Day score 
-In the below experiment, we take as keyword-weights for each topic and multiply by recency
-to get a combined weight-recency metric to evaluate the value of words 
+""" Develop a way to map topics across model runs and their potential children
 """
 
 Topic_Words = model.topic_words
-Topic_Weights = model.topic_word_scores
+Topic_Weights = model.topic_word_scores 
+#for row in Topic_Words:
+    
+
 
 
 # In[]
@@ -399,7 +400,9 @@ SearchTerms = ['NFL','Draft']
 
 SearchTerms = ['Football']
 SearchTerms = ['premier']
-#SearchTerms = ['Manchester','Liverpool']
+SearchTerms = ['Manchester','Liverpool']
+SearchTerms = ['Liverpool']
+
 # Draw Post Clouds
 Topic_Ct = 91
 topic_words, word_scores, topic_scores, topic_nums = model.search_topics(keywords=SearchTerms, num_topics=Topic_Ct)
