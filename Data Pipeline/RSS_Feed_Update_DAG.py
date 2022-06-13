@@ -6,9 +6,12 @@ from dateutil import tz
 import pandas as pd
 import numpy as np
 import feedparser
+import urllib.parse
 
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+#from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
+
 import snowflake.connector
 
 
@@ -17,6 +20,7 @@ import snowflake.connector
 #Create Default Airflow Arguments
 default_args = {
     'owner': 'airflow',
+    'retries': 0,
     'depends_on_past': False,    
     'start_date': datetime(2022, 6, 1),
     'email': ['Anwar.Hossain@Toptal.com'],
@@ -57,7 +61,7 @@ def RSS_Posts_Extract_Load():
     )
     
     #Read links from RSS_Links table in snowflakes
-    links_RSS = snow_con_config.cursor().execute("Select Link From RSS_FEED_MONITOR.CONFIG.RSS_LINKS").fetchall()
+    links_RSS = snow_con_config.cursor().execute("Select Link, Domain, Language, Country From RSS_FEED_MONITOR.CONFIG.RSS_LINKS").fetchall()
     print(f"# of Rows in Links Table: {len(links_RSS)}")
     #print(links_RSS)
       
@@ -69,7 +73,7 @@ def RSS_Posts_Extract_Load():
     print('Getting RSS Posts')
     start = datetime.now()
     print('Started: ', start)
-    feeds = [[datetime.now(), url[0], feedparser.parse(url[0])['entries']] for url in links_RSS]
+    feeds = [[datetime.now(), url[0],url[1],url[2], url[3], feedparser.parse(url[0])['entries']] for url in links_RSS]
     end = datetime.now()
     print('Completed: ', end)
     print('Time to complete', end-start)
@@ -80,11 +84,15 @@ def RSS_Posts_Extract_Load():
     Feeds_DF = pd.DataFrame()
     print('Processing feeds...')
     for feed in feeds:
-        Feed_DF = pd.DataFrame(feed[2])
-        Post_Counts.append(len(feed[2]))
+        Feed_DF = pd.DataFrame(feed[5])
+        Feed_DF["Source"] = feed[1]
+        Feed_DF["Domain"] = feed[2]
+        Feed_DF["Language"] = feed[3]
+        Feed_DF["Country"] = feed[4]
+        Post_Counts.append(len(feed[5]))
         Feeds_DF = Feeds_DF.append(Feed_DF)
         
-    df = Feeds_DF[['published', 'title', 'link', 'summary', 'author']].copy() # pass data to init
+    df = Feeds_DF[['published', 'title', 'link', 'summary', 'author','Source','Domain','Language','Country']].copy() # pass data to init
     
     #########################################################################
     # Clean up data
@@ -94,9 +102,14 @@ def RSS_Posts_Extract_Load():
     Dates_Clean = [x.split(', ')[1] if ', ' in x else x for x in Dates]
     Dates_Clean = [x if 'HH:' not in x else x.split(' HH:')[0] for x in Dates_Clean]
     Dates_Clean = [np.nan if x == '' else x for x in Dates_Clean]
+ #   Dates_Clean = [x.replace('BST','+0100')  for x in Dates_Clean]
+ #   Dates_Clean = [x.replace('PDT','-0700')  for x in Dates_Clean]
+ #   Dates_Clean = [x.replace('EDT','-0400')  for x in Dates_Clean]
+    
     Dates_Clean = [dateutil.parser.parse(str(x)) if str(x) != 'nan' else x for x in Dates_Clean]
     Dates_Clean = [x.astimezone(tz.UTC) if str(x) != 'nan' else x for x in Dates_Clean]
     Dates_Clean = [x.replace(tzinfo=None) if str(x) != 'nan' else x for x in Dates_Clean]
+    
     df['published'] = Dates_Clean
     
     
@@ -104,7 +117,7 @@ def RSS_Posts_Extract_Load():
     
     
     # Select columns for Posts File
-    Post_df = df[['published', 'author', 'title', 'link', 'summary']] 
+    Post_df = df[['published', 'author', 'title', 'link', 'summary','Source','Domain','Language','Country']] 
     
     
     Post_df['author'] = Post_df['author'].fillna('No author')
@@ -134,6 +147,12 @@ def RSS_Posts_Extract_Load():
     Post_df['author'] = Post_df['author'].fillna('No author')
     Post_df['link'] = Post_df['link'].fillna('No Link')
     Post_df['summary'] = Post_df['summary'].fillna('No Summary')
+
+    # Update Source to use specific link if available, otherwise keep the source RSS feed link
+    Post_df.loc[Post_df["link"] != "No Link","Source"]  = Post_df.loc[Post_df["link"] != "No Link","link"]
+    # Extract Domain information
+    Post_df["Domain"]  = [urllib.parse.urlparse(url).hostname   for url in Post_df['Source'].tolist()]
+
     
     # Remove NaT Values
     Post_df = Post_df.dropna()
@@ -150,9 +169,8 @@ def RSS_Posts_Extract_Load():
     Post_df['summary'] = [str(doc).split(Search_String)[0] for doc in Post_df['summary'].tolist()]
    
 
-    
-    
-    final_df = Post_df[['published', 'author', 'title', 'link', 'summary']]
+        
+    final_df = Post_df[['published', 'author', 'title', 'link', 'summary','Source','Domain','Language','Country']]
     
     
     #########################################################################
@@ -160,8 +178,8 @@ def RSS_Posts_Extract_Load():
     #########################################################################
     table = "RSS_POST_History"
     
-    insert_columns = ['published', 'author', 'title', 'link', 'summary']
-    update_columns = ['published', 'author', 'title', 'summary']
+    insert_columns = ['published', 'author', 'title', 'link', 'summary','Source','Domain','Language','Country']
+    update_columns = ['published', 'author', 'title', 'summary','Source','Domain','Language','Country']
     id_columns = ['published','link','title']
     
     if final_df.empty: 
@@ -203,7 +221,7 @@ def RSS_Posts_Extract_Load():
         # delete the json file created
         os.remove(filename)
         print('\t...Merging and staging file clean up complete')
-
+        
         cur.close()
         
      
