@@ -27,7 +27,7 @@ default_args = {
     'email_on_failure': True,
     'email_on_retry': False 
     
-    
+                                    
 }
 
 # Set Schedule: Run pipeline every 30 mins every day. 
@@ -159,7 +159,7 @@ def RSS_Posts_Extract_Load():
     # Sort Posts by Publication Date
     Post_df = Post_df.sort_values('published', ascending=False).reset_index(drop=True)
     # Drop Duplicates
-    Post_df = Post_df.drop_duplicates(subset=['published','title', 'link'], keep='first').copy()
+    Post_df = Post_df.drop_duplicates(subset=['published','title', 'Source', 'summary'], keep='first').copy()
     
     # Delete RSS.app notice that trial expired.
     Post_df = Post_df[~Post_df['summary'].str.contains('Your trial has expired.')]
@@ -180,7 +180,7 @@ def RSS_Posts_Extract_Load():
     
     insert_columns = ['published', 'author', 'title', 'link', 'summary','Source','Domain','Language','Country']
     update_columns = ['published', 'author', 'title', 'summary','Source','Domain','Language','Country']
-    id_columns = ['published','link','title']
+    id_columns = ['Source','title', 'summary']
     
     if final_df.empty: 
         print(f'No rows to bulk upsert to {table}. Aborting.')
